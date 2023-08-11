@@ -1,0 +1,10 @@
+main: me.simplicitee.elemental.Elemental
+name: Elemental
+version: 1.0.0
+description: Bending
+api-version: "1.20"
+authors: [Simplicitee]
+commands:
+  elemental:
+    aliases: [e, bending, b]
+    
