@@ -27,14 +27,11 @@ import com.elementalplugin.elemental.ability.combo.ComboValidator;
 import com.elementalplugin.elemental.ability.util.AbilityBinds;
 import com.elementalplugin.elemental.ability.util.Cooldown;
 import com.elementalplugin.elemental.ability.util.Stamina;
-import com.elementalplugin.elemental.effect.ParticleData;
 import com.elementalplugin.elemental.event.user.UserBindChangeEvent;
 import com.elementalplugin.elemental.event.user.UserBindCopyEvent;
 import com.elementalplugin.elemental.event.user.UserCooldownEndEvent;
 import com.elementalplugin.elemental.event.user.UserCooldownStartEvent;
-import com.elementalplugin.elemental.skill.Skill;
 import com.elementalplugin.elemental.skill.SkillHolder;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.util.Events;
 import com.elementalplugin.elemental.util.Vectors;
 
@@ -50,7 +47,6 @@ public abstract class AbilityUser extends SkillHolder {
     private LivingEntity entity;
     private Stamina stamina;
     private List<ComboValidator> sequences = new LinkedList<>();
-    private Map<Skill, ParticleData> effects = new HashMap<>();
     private boolean usedActionBar = false;
 
     Set<AbilityInstance> active = new HashSet<>();
@@ -59,7 +55,6 @@ public abstract class AbilityUser extends SkillHolder {
 
     public AbilityUser(LivingEntity entity) {
         this.entity = entity;
-        Skills.manager().registered().forEach(s -> effects.put(s, s.getParticle()));
         this.stamina = new Stamina(this);
     }
 
@@ -67,17 +62,16 @@ public abstract class AbilityUser extends SkillHolder {
         ComboValidator completed = null;
         sequences.add(new ComboValidator(root));
         Iterator<ComboValidator> iter = sequences.iterator();
-        outer: while (iter.hasNext()) {
+        out: while (iter.hasNext()) {
             ComboValidator agent = iter.next();
 
             switch (agent.update(ability, trigger)) {
             case COMPLETE:
                 completed = agent;
-                break outer;
+                break out;
             case FAILED:
                 iter.remove();
             case INCOMPLETE:
-                break;
             }
         }
 
@@ -152,8 +146,8 @@ public abstract class AbilityUser extends SkillHolder {
         }
     }
 
-    public void refreshPassives() {
-        Abilities.manager().refreshPassives(this);
+    public void refresh() {
+        Abilities.manager().refresh(this);
     }
 
     public LivingEntity getEntity() {
@@ -416,21 +410,6 @@ public abstract class AbilityUser extends SkillHolder {
         Cooldown cd = cooldowns.remove(tag);
         cdQueue.remove(cd);
         Events.call(new UserCooldownEndEvent(this, cd));
-    }
-
-    public final ParticleData getSkillParticle(Skill skill) {
-        return effects.get(skill).clone();
-    }
-
-    /**
-     * Sets the user's default effect for the given skill, returning the old effect
-     * 
-     * @param skill   the skill for the new effect
-     * @param builder the new effect
-     * @return the old effect
-     */
-    public final ParticleData setSkillParticle(Skill skill, ParticleData particle) {
-        return this.effects.put(skill, particle.clone());
     }
 
     public Location getTargetLocation(double distance, FluidCollisionMode fluids, boolean ignorePassable, Predicate<Entity> filter) {

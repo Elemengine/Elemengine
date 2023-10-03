@@ -5,7 +5,6 @@ import org.bukkit.event.Listener;
 import com.elementalplugin.elemental.ability.activation.Trigger;
 import com.elementalplugin.elemental.ability.util.Cooldown;
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.Config;
 import com.elementalplugin.elemental.storage.Configurable;
 
@@ -27,12 +26,12 @@ public abstract class AbilityInfo implements Configurable, Listener {
     private String name, author, version, description;
     private Skill skill;
 
-    public AbilityInfo(String name, String description, String author, String version, String skill) {
+    public AbilityInfo(String name, String description, String author, String version, Skill skill) {
         this.name = name;
         this.description = description;
         this.author = author;
         this.version = version;
-        this.skill = Skills.manager().get(skill);
+        this.skill = skill;
     }
 
     public final String getName() {
@@ -56,7 +55,7 @@ public abstract class AbilityInfo implements Configurable, Listener {
     }
 
     public ChatColor getDisplayColor() {
-        return skill.getColor();
+        return skill.getChatColor();
     }
 
     public String getDisplay() {
@@ -74,7 +73,7 @@ public abstract class AbilityInfo implements Configurable, Listener {
 
     @Override
     public String getFolderName() {
-        return skill.getName();
+        return skill.getDisplayName();
     }
 
     @Override

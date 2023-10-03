@@ -6,7 +6,6 @@ import java.util.List;
 import org.bukkit.command.CommandSender;
 
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.Config;
 
 import net.md_5.bungee.api.ChatColor;
@@ -32,17 +31,17 @@ public class SkillsCommand extends SubCommand {
 
         ComponentBuilder msgs = new ComponentBuilder("Available Skills").color(ChatColor.WHITE).bold(true);
 
-        for (Skill skill : Skills.manager().registered().stream().filter(s -> !s.getChildren().isEmpty()).sorted((a, b) -> a.getName().compareTo(b.getName())).toList()) {
-            if (sender.hasPermission("elemental." + skill.getName())) {
-                msgs.append("\n" + skill.getName(), FormatRetention.NONE).color(skill.getColor())
+        for (Skill skill : Skill.streamValues().filter(s -> !s.getChildren().isEmpty()).sorted((a, b) -> a.getDisplayName().compareTo(b.getDisplayName())).toList()) {
+            if (sender.hasPermission("elemental." + skill.toString())) {
+                msgs.append("\n" + skill.getDisplayName(), FormatRetention.NONE).color(skill.getChatColor())
                     .event(new HoverEvent(Action.SHOW_TEXT, new Text("Click to view the abilities for this skill")))
-                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/elemental abilities " + skill.getName()));
+                    .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/elemental abilities " + skill.toString()));
 
                 for (Skill child : skill.getChildren()) {
                     msgs.append("\n - ", FormatRetention.NONE).color(ChatColor.WHITE)
-                        .append(child.getName(), FormatRetention.NONE).color(child.getColor())
+                        .append(child.getDisplayName(), FormatRetention.NONE).color(child.getChatColor())
                         .event(new HoverEvent(Action.SHOW_TEXT, new Text("Click to view the abilities for this skill")))
-                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/elemental abilities " + child.getName()));
+                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/elemental abilities " + child.toString()));
                 }
             }
         }

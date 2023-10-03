@@ -34,7 +34,7 @@ public final class Stamina {
 
     public Stamina(AbilityUser user) {
         this.user = user;
-        this.regen = config.getValue(FileConfiguration::getDouble, "DefaultRegen");
+        this.regen = config.get(FileConfiguration::getDouble, "DefaultRegen");
         this.bar = Bukkit.createBossBar("Bending Stamina", BarColor.GREEN, BarStyle.SOLID);
         this.updateBar();
     }

@@ -1,4 +1,4 @@
-main: me.simplicitee.elemental.Elemental
+main: com.elementalplugin.elemental.Elemental
 name: Elemental
 version: 1.0.0
 description: Bending

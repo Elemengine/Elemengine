@@ -77,7 +77,7 @@ public abstract class Manager {
 
     static void init() {
         PriorityQueue<Manager> loaded = new PriorityQueue<>((a, b) -> a.priority() - b.priority());
-        DynamicLoader.load(Elemental.plugin(), "me.simplicitee.elemental", Manager.class, loaded::add);
+        DynamicLoader.load(Elemental.plugin(), "com.elementalplugin.elemental", Manager.class, loaded::add);
 
         // need to register them in the proper order for everything to work as expected
         Manager next;

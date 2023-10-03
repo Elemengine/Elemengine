@@ -45,7 +45,7 @@ public class Commands extends Manager implements CommandExecutor, TabCompleter {
         spigot.setExecutor(this);
         spigot.setTabCompleter(this);
 
-        DynamicLoader.load(Elemental.plugin(), "me.simplicitee.elemental.command", SubCommand.class, this::register);
+        DynamicLoader.load(Elemental.plugin(), "com.elementalplugin.elemental.command", SubCommand.class, this::register);
     }
 
     @Override

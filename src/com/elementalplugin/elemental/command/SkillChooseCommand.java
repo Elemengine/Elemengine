@@ -12,7 +12,6 @@ import org.bukkit.entity.Player;
 import com.elementalplugin.elemental.Manager;
 import com.elementalplugin.elemental.ability.AbilityUser;
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.Config;
 import com.elementalplugin.elemental.user.Users;
 
@@ -62,7 +61,7 @@ public class SkillChooseCommand extends SubCommand {
             return;
         }
 
-        Skill skill = Manager.of(Skills.class).get(args[0]);
+        Skill skill = Skill.valueOf(args[0]);
 
         if (skill == null) {
             sender.sendMessage(ChatColor.RED + "No skill found from '" + ChatColor.GOLD + args[0] + ChatColor.RED + "'");
@@ -70,7 +69,7 @@ public class SkillChooseCommand extends SubCommand {
         } else if (!skill.getParents().isEmpty()) {
             sender.sendMessage(ChatColor.RED + "Cannot choose a subskill, must choose a parent!");
             return;
-        } else if (!user.hasPermission("projectkorra.skill." + skill.getName())) {
+        } else if (!user.hasPermission("elemental.skill." + skill.toString().toLowerCase())) {
             sender.sendMessage(ChatColor.RED + "User does not have permission to use that skill!");
             return;
         }
@@ -78,7 +77,7 @@ public class SkillChooseCommand extends SubCommand {
         Set<Skill> toAdd = new HashSet<>();
         toAdd.add(skill);
         for (Skill child : skill.getChildren()) {
-            if (user.hasPermission("projectkorra.skill." + child.getName())) {
+            if (user.hasPermission("elemental.skill." + child.toString().toLowerCase())) {
                 toAdd.add(child);
             }
         }

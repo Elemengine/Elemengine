@@ -12,7 +12,6 @@ import com.elementalplugin.elemental.ability.AbilityInfo;
 import com.elementalplugin.elemental.ability.Bindable;
 import com.elementalplugin.elemental.ability.combo.Combo;
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.Config;
 
 import net.md_5.bungee.api.ChatColor;
@@ -70,30 +69,32 @@ public class HelpCommand extends SubCommand {
         List<String> tabs = new ArrayList<>();
         Commands.manager().registered().stream().map(s -> "command:" + s).forEach(tabs::add);
         Abilities.manager().registered().stream().map(a -> "ability:" + a.getName()).forEach(tabs::add);
-        Skills.manager().registered().stream().map(s -> "skill:" + s.getName()).forEach(tabs::add);
+        Skill.streamValues().map(s -> "skill:" + s.toString()).forEach(tabs::add);
 
         return tabs;
     }
 
     private BaseComponent[] skill(String arg, CommandSender sender) {
-        Skill skill = Skills.manager().get(arg);
+        Skill skill = Skill.valueOf(arg);
         if (skill == null) {
             return new ComponentBuilder("No skill from that name!").color(ChatColor.RED).create();
         }
 
-        if (!sender.hasPermission("elemental." + skill.getName())) {
+        if (!sender.hasPermission("elemental." + skill.toString().toLowerCase())) {
             return new ComponentBuilder("You don't have permission to view info on that skill.").color(ChatColor.RED).create();
         }
 
-        ComponentBuilder msgs = new ComponentBuilder(skill.getName()).color(ChatColor.WHITE).bold(true);
+        ComponentBuilder msgs = new ComponentBuilder(skill.getDisplayName()).color(ChatColor.WHITE).bold(true);
 
         for (AbilityInfo ability : Abilities.manager().fromSkill(skill)) {
             if (sender.hasPermission("elemental.ability." + ability.getName())) {
                 msgs.append("\n" + ability.getName(), FormatRetention.NONE).color(ability.getDisplayColor()).event(new HoverEvent(Action.SHOW_TEXT, new Text(ability.getDescription())));
 
                 if (ability instanceof Bindable) {
-                    msgs.append(" ", FormatRetention.NONE).append("[bind]", FormatRetention.NONE).event(new HoverEvent(Action.SHOW_TEXT, new Text("Click to bind this ability to your current slot")))
-                            .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/elemental bind " + ability.getName()));
+                    msgs.append(" ", FormatRetention.NONE)
+                        .append("[bind]", FormatRetention.NONE)
+                        .event(new HoverEvent(Action.SHOW_TEXT, new Text("Click to bind this ability to your current slot")))
+                        .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/elemental bind " + ability.getName()));
                 }
             }
         }

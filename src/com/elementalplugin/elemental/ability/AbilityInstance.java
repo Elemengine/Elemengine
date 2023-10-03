@@ -2,17 +2,14 @@ package com.elementalplugin.elemental.ability;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
 
 import com.elementalplugin.elemental.ability.attribute.Attribute;
 import com.elementalplugin.elemental.ability.attribute.AttributeGroup;
 import com.elementalplugin.elemental.ability.attribute.Modifier;
-import com.elementalplugin.elemental.effect.Effect;
-import com.elementalplugin.elemental.effect.ParticleData;
-import com.elementalplugin.elemental.effect.Effect.EffectBuilder;
-import com.elementalplugin.elemental.util.reflect.Safety;
+import com.elementalplugin.elemental.util.reflect.Fields;
 
 public abstract class AbilityInstance {
 
@@ -32,37 +29,84 @@ public abstract class AbilityInstance {
     protected static final String FIRE_TICK = Attribute.FIRE_TICK;
 
     static final Map<Class<? extends AbilityInstance>, Map<String, Field>> ATTRIBUTES = new HashMap<>();
-
-    public enum State {
-        UPDATING, STOPPING;
+    
+    /**
+     * Represents what state the instance exists in. Typically instances will go through
+     * the phases in order of STARTING -> UPDATING -> STOPPING. An instance
+     * will skip the UPDATING phase if {@link AbilityInstance#onStart()} returns false
+     */
+    public enum Phase {
+        /**
+         * State when the instance is being started
+         */
+        STARTING,
+        /**
+         * State when the instance is being updated
+         */
+        UPDATING, 
+        /**
+         * State when the instance is being stopped
+         */
+        STOPPING
     }
 
     protected final AbilityInfo provider;
     protected final AbilityUser user;
+    
+    private Phase state = Phase.STARTING;
     private int counter = -1;
     private long startTime = -1;
     private Map<Field, Modifier> mods = new HashMap<>();
-    private State state = State.UPDATING;
 
     public AbilityInstance(AbilityInfo provider, AbilityUser user) {
         this.provider = provider;
         this.user = user;
     }
 
+    final void start() {
+        startTime = System.currentTimeMillis();
+
+        Iterator<Entry<Field, Modifier>> iter = mods.entrySet().iterator();
+        while (iter.hasNext()) {
+            Entry<Field, Modifier> entry = iter.next();
+            Fields.getSet(this, entry.getKey(), (value) -> {
+                return entry.getValue().apply(value);
+            });
+            iter.remove(); //don't need that anymore
+        }
+        
+        state = Phase.STOPPING;
+
+        if (this.onStart()) {
+            user.active.add(this);
+            state = Phase.UPDATING;
+        }
+    }
+
+    final boolean update(double timeDelta) {
+        ++counter;
+        return onUpdate(timeDelta);
+    }
+
+    final void stop() {
+        if (state == Phase.STOPPING) return;
+        
+        state = Phase.STOPPING;
+        this.onStop();
+        user.active.remove(this);
+        startTime = -1;
+        counter = -1;
+    }
+
     public final AbilityInfo getProvider() {
         return provider;
     }
 
-    /**
-     * Gets the user associated with this instance
-     * 
-     * @return user
-     */
     public final AbilityUser getUser() {
         return user;
     }
-
-    public final State getState() {
+    
+    public final Phase getPhase() {
         return state;
     }
 
@@ -103,49 +147,12 @@ public abstract class AbilityInstance {
     public final boolean hasStarted() {
         return startTime >= 0;
     }
-    
-    public String getName() {
-        return provider.getName();
-    }
 
-    public boolean hasUpdate() {
-        return true;
-    }
-
-    final boolean start() {
-        startTime = System.currentTimeMillis();
-        user.active.add(this);
-
-        for (Entry<Field, Modifier> entry : mods.entrySet()) {
-            try {
-                new Safety(this, entry.getKey()).getSet((value) -> {
-                    return entry.getValue().apply(value);
-                }, true);
-            } catch (Exception e) {}
-        }
-
-        return onStart();
-    }
-
-    final boolean update(double timeDelta) {
-        ++counter;
-        return onUpdate(timeDelta);
-    }
-
-    final void stop() {
-        onStop();
-        state = State.STOPPING;
-        user.active.remove(this);
-        startTime = -1;
-        counter = -1;
-        mods.clear();
-    }
-
-    public boolean hasAttribute(String attribute) {
+    public final boolean hasAttribute(String attribute) {
         return ATTRIBUTES.containsKey(this.getClass()) && ATTRIBUTES.get(this.getClass()).containsKey(attribute);
     }
 
-    public boolean addModifier(String attribute, Modifier mod) {
+    public final boolean addModifier(String attribute, Modifier mod) {
         if (!this.hasAttribute(attribute)) {
             return false;
         }
@@ -155,7 +162,7 @@ public abstract class AbilityInstance {
         return true;
     }
 
-    public boolean[] addModifier(AttributeGroup group, Modifier mod) {
+    public final boolean[] addModifier(AttributeGroup group, Modifier mod) {
         boolean[] worked = new boolean[group.size()];
         int i = -1;
 
@@ -165,19 +172,13 @@ public abstract class AbilityInstance {
 
         return worked;
     }
-
-    public EffectBuilder effect() {
-        return effect(null);
+    
+    public boolean hasUpdate() {
+        return true;
     }
-
-    public EffectBuilder effect(Consumer<ParticleData> mods) {
-        ParticleData data = user.getSkillParticle(provider.getSkill());
-
-        if (mods != null) {
-            mods.accept(data);
-        }
-
-        return Effect.builder().add(data);
+    
+    public String getName() {
+        return provider.getName();
     }
 
     /**

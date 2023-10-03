@@ -9,7 +9,7 @@ import org.bukkit.Bukkit;
 
 import com.elementalplugin.elemental.ability.Abilities;
 import com.elementalplugin.elemental.ability.AbilityUser;
-import com.elementalplugin.elemental.skill.Skills;
+import com.elementalplugin.elemental.skill.Skill;
 
 public class TabCompleteList {
     
@@ -30,6 +30,6 @@ public class TabCompleteList {
     }
 
     public static List<String> skills(boolean parentOnly) {
-        return Skills.manager().registered().stream().filter((s) -> !parentOnly || !s.getChildren().isEmpty()).map((s) -> s.getName()).collect(Collectors.toList());
+        return Skill.streamValues().filter((s) -> !parentOnly || !s.getChildren().isEmpty()).map((s) -> s.toString()).collect(Collectors.toList());
     }
 }

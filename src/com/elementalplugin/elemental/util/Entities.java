@@ -11,6 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.elementalplugin.elemental.Elemental;
@@ -135,16 +136,5 @@ public final class Entities {
 
     public static boolean isBeingMoved(Entity entity) {
         return entity.hasMetadata(METAKEY);
-    }
-    
-    public static void transformDisplay(Display display, Consumer<Transformation> transformer) {
-        Transformation transform = display.getTransformation();
-        transformer.accept(transform);
-        display.setTransformation(transform);
-    }
-    
-    public static Location getDisplayLocation(Display display) {
-        Vector3f translate = display.getTransformation().getTranslation();
-        return new Location(display.getWorld(), translate.x, translate.y, translate.z);
     }
 }

@@ -54,7 +54,7 @@ public abstract class SubCommand implements Configurable {
      * @return true if the sender has permission
      */
     public final boolean hasPermission(CommandSender sender, String afterCommand) {
-        return sender.hasPermission("projectkorra.command." + name + ".");
+        return sender.hasPermission("elemental.command." + name + ".");
     }
 
     /**

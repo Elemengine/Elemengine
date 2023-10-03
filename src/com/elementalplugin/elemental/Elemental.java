@@ -47,6 +47,16 @@ public class Elemental extends JavaPlugin {
     public static File getFolder() {
         return JavaPlugin.getPlugin(Elemental.class).getDataFolder();
     }
+    
+    public static File getAddonsFolder() {
+        File addons = new File(getFolder(), "/addons/");
+        
+        if (!addons.exists()) {
+            addons.mkdirs();
+        }
+        
+        return addons;
+    }
 
     public static DBConnection database() {
         return database;

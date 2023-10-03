@@ -63,8 +63,13 @@ public class Config {
         }
     }
 
-    public void addDefault(String path, Object value) {
+    public Config addDefault(String path, Object value) {
         config.addDefault(path, value);
+        return this;
+    }
+    
+    public boolean contains(String path) {
+        return config.contains(path);
     }
 
     /**
@@ -82,19 +87,24 @@ public class Config {
      * @param path   Path argument for a configuration path
      * @return a value from the config
      */
-    public <T> T getValue(BiFunction<FileConfiguration, String, T> getter, String path) {
+    public <T> T get(BiFunction<FileConfiguration, String, T> getter, String path) {
         return getter.apply(config, path);
     }
 
-    public <T> T getValue(Function<FileConfiguration, T> getter) {
+    public <T> T get(Function<FileConfiguration, T> getter) {
         return getter.apply(config);
     }
 
-    public Object getValue(String path) {
+    public Object get(String path) {
         return config.get(path);
     }
+    
+    public Config set(String path, Object value) {
+        config.set(path, value);
+        return this;
+    }
 
-    public FileConfiguration get() {
+    public FileConfiguration into() {
         return config;
     }
 
@@ -163,11 +173,11 @@ public class Config {
                     boolean access = field.canAccess(object);
                     field.setAccessible(true);
 
-                    if (!config.get().contains(path)) {
+                    if (!config.into().contains(path)) {
                         config.addDefault(path, field.get(object));
-                        config.get().setComments(path, parseComments(field.getAnnotation(Configure.class).comment()));
+                        config.into().setComments(path, parseComments(field.getAnnotation(Configure.class).comment()));
                     } else {
-                        field.set(object, config.getValue(path));
+                        field.set(object, config.get(path));
                     }
 
                     field.setAccessible(access);

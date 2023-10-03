@@ -12,16 +12,22 @@ import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import com.elementalplugin.elemental.ability.Abilities;
+import com.elementalplugin.elemental.ability.AbilityUser;
 import com.elementalplugin.elemental.storage.Config;
 import com.elementalplugin.elemental.storage.Configurable;
 import com.elementalplugin.elemental.user.Users;
 
 import net.md_5.bungee.api.ChatColor;
 
-public class ConfigCommand extends SubCommand {
+public class ConfigureCommand extends SubCommand {
 
-    public ConfigCommand() {
-        super("config", "Control ability configuration in-game. Use the set subcommand to change values and then the reload subcommand to have the ability reconfigured.", "/e config <ability> [set <path> <value> | reload]" , Arrays.asList("configure", "cfg", "c"));
+    public ConfigureCommand() {
+        super(
+            "configure", 
+            "Sets the configurable field of the given ability and reloads the ability (unless given false), which will stop all active abilities and restart any passives.", 
+            "/e configure <ability> [<path> <value> [reload]]" , 
+            Arrays.asList("config", "cfg", "c")
+        );
     }
 
     @Override
@@ -35,47 +41,53 @@ public class ConfigCommand extends SubCommand {
         }
         
         Abilities.manager().getInfo(args[0]).ifPresentOrElse(a -> {
+            Config config = Config.from(a);
+            
             if (args.length == 1) {
-                FileConfiguration fc = Config.from(a).get();
                 List<String> message = new ArrayList<>();
                 
-                for (String key : fc.getKeys(true)) {
-                    message.add("- " + key + ": " + fc.get(key));
+                for (String key : config.get(fc -> fc.getKeys(true))) {
+                    message.add("- " + key + ": " + config.get(key));
                 }
                 
                 sender.sendMessage(message.toArray(new String[0]));
                 return;
             }
             
-            if (args[1].equalsIgnoreCase("set")) {
-                if (args.length != 4) {
-                    sender.sendMessage(ChatColor.RED + "Config set needs two args: the path to modify and the value to set");
-                    return;
-                }
-                
-                FileConfiguration fc = Config.from(a).get();
-                if (!fc.contains(args[2])) {
-                    sender.sendMessage(ChatColor.RED + "Could not find config path for " + args[2] + ", remember paths are case-sensitive.");
-                    return;
-                }
-                
-                Object value = parse(a, args[2], args[3]);
-                if (value == null) {
-                    sender.sendMessage(ChatColor.RED + "Unable to parse value " + args[3]);
-                    return;
-                }
-                
-                fc.set(args[2], value);
-                Config.from(a).save();
-                sender.sendMessage(ChatColor.GREEN + "Successfully set the value. The value will not update in-game until reloaded.");
-            } else if (args[1].equalsIgnoreCase("reload")) {
+            if (args.length < 3 || args.length > 4) {
+                sender.sendMessage(ChatColor.RED + "Configure needs two args: the path to modify and the value to set");
+                return;
+            }
+            
+            if (!config.contains(args[1])) {
+                sender.sendMessage(ChatColor.RED + "Could not find config path for " + args[1] + ", remember paths are case-sensitive.");
+                return;
+            }
+            
+            Object value = parse(a, args[1], args[2]);
+            if (value == null) {
+                sender.sendMessage(ChatColor.RED + "Unable to parse value " + args[2]);
+                return;
+            }
+            
+            config.set(args[1], value).save();
+            
+            boolean reload = true;
+            if (args.length == 4) {
+                try {
+                    reload = Boolean.parseBoolean(args[3].toLowerCase());
+                } catch (Exception e) {}
+            }
+            
+            if (reload) {
                 Config.process(a);
-                Users.manager().registered().forEach(Abilities.manager()::refreshPassives);
-                
-                sender.sendMessage(ChatColor.GREEN + "Configurable values for " + a.getDisplay() + ChatColor.GREEN + " have been reloaded.");
+                Users.manager().registered().forEach(AbilityUser::refresh);
+                sender.sendMessage(ChatColor.GREEN + "Successfully set the value and reloaded the ability.");
+            } else {
+                sender.sendMessage(ChatColor.GREEN + "Successfully set the value. The value will not update in-game until reloaded.");
             }
         }, () -> {
-            sender.sendMessage(ChatColor.RED + "invalid ability");
+            sender.sendMessage(ChatColor.RED + "Invalid ability");
         });
     }
 
@@ -87,15 +99,9 @@ public class ConfigCommand extends SubCommand {
         
         List<String> options = new ArrayList<>();
         Abilities.manager().getInfo(args[0]).ifPresentOrElse(a -> {
+            FileConfiguration fc = Config.from(a).into();
+            
             if (args.length == 2) {
-                options.add("set");
-                options.add("reload");
-                return;
-            }
-            
-            FileConfiguration fc = Config.from(a).get();
-            
-            if (args.length == 3) {
                 for (String key : fc.getKeys(true)) {
                     if (fc.get(key) instanceof MemorySection) {
                         continue;
@@ -116,10 +122,10 @@ public class ConfigCommand extends SubCommand {
                         options.add(key);
                     }
                 }
-            } else if (args.length == 4) {
-                Object value = fc.get(args[2]);
+            } else if (args.length == 3) {
+                Object value = fc.get(args[1]);
                 
-                Config.getConfigurableField(a, args[2]).ifPresent(f -> {
+                Config.getConfigurableField(a, args[1]).ifPresent(f -> {
                     String type = "type: ";
                     
                     if (f.getType() == Integer.TYPE || f.getType() == Long.TYPE) {
@@ -137,10 +143,13 @@ public class ConfigCommand extends SubCommand {
                 
                 if (value != null) {
                     options.add("current: " + value);
-                    options.add(args[3]);
+                    options.add(args[2]);
                 } else {
                     options.add("path not found");
                 }
+            } else if (args.length == 4) {
+                options.add("true");
+                options.add("false");
             }
         }, () -> {
             options.add("ability not found");

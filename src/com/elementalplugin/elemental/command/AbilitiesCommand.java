@@ -11,7 +11,6 @@ import com.elementalplugin.elemental.ability.Abilities;
 import com.elementalplugin.elemental.ability.AbilityInfo;
 import com.elementalplugin.elemental.ability.Bindable;
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.Config;
 
 import net.md_5.bungee.api.ChatColor;
@@ -35,7 +34,7 @@ public class AbilitiesCommand extends SubCommand {
             return;
         }
 
-        Skill skill = Manager.of(Skills.class).get(args[0]);
+        Skill skill = Skill.valueOf(args[0]);
 
         if (skill == null) {
             sender.sendMessage(ChatColor.RED + "No skill found from '" + ChatColor.GOLD + args[0] + ChatColor.RED + "'");
@@ -49,7 +48,7 @@ public class AbilitiesCommand extends SubCommand {
             return;
         }
 
-        ComponentBuilder builder = new ComponentBuilder(skill.getName().toUpperCase()).color(skill.getColor()).bold(true);
+        ComponentBuilder builder = new ComponentBuilder(skill.getDisplayName()).color(skill.getChatColor()).bold(true);
 
         for (AbilityInfo ability : abils) {
             if (sender.hasPermission("elemental.ability." + ability.getName())) {

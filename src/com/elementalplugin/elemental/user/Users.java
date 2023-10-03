@@ -18,7 +18,6 @@ import com.elementalplugin.elemental.ability.AbilityInfo;
 import com.elementalplugin.elemental.ability.AbilityUser;
 import com.elementalplugin.elemental.event.user.UserCreationEvent;
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.DBConnection;
 import com.elementalplugin.elemental.util.Events;
 
@@ -113,9 +112,10 @@ public class Users extends Manager {
             if (db.read("SELECT * FROM t_player WHERE uuid = '" + player.getUniqueId() + "'").next()) {
                 ResultSet skillQuery = db.read("SELECT * FROM t_player_skills WHERE uuid = '" + player.getUniqueId() + "'");
                 while (skillQuery.next()) {
-                    Skill skill = Manager.of(Skills.class).get(skillQuery.getString("skill_name"));
-
-                    if (skill == null) {
+                    Skill skill;
+                    try {
+                        skill = Skill.valueOf(skillQuery.getString("skill_name").toUpperCase());
+                    } catch (Exception e) {
                         continue;
                     }
 
@@ -152,18 +152,18 @@ public class Users extends Manager {
 
         try {
             if (db.read("SELECT * FROM t_player WHERE uuid = '" + user.getUniqueID() + "'").next()) {
-                // update eventually when t_pk_player has more columns
+                // update eventually when t_pk_player has more columns?
             } else {
                 db.send("INSERT INTO t_player VALUES ('" + user.getUniqueID() + "')");
             }
 
-            for (Skill skill : Manager.of(Skills.class).registered()) {
+            for (Skill skill : Skill.values()) {
                 if (!user.hasSkill(skill)) {
-                    db.send("DELETE FROM t_player_skills WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.getName() + "'");
-                } else if (db.read("SELECT * FROM t_player_skills WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.getName() + "'").next()) {
-                    db.send("UPDATE t_player_skills SET toggled = " + (user.isToggled(skill) ? 1 : 0) + " WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.getName() + "'");
+                    db.send("DELETE FROM t_player_skills WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.toString() + "'");
+                } else if (db.read("SELECT * FROM t_player_skills WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.toString() + "'").next()) {
+                    db.send("UPDATE t_player_skills SET toggled = " + (user.isToggled(skill) ? 1 : 0) + " WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.toString() + "'");
                 } else {
-                    db.send("INSERT INTO t_player_skills VALUES ('" + user.getUniqueID() + "', '" + skill.getName() + "', " + (user.isToggled(skill) ? 1 : 0) + ")");
+                    db.send("INSERT INTO t_player_skills VALUES ('" + user.getUniqueID() + "', '" + skill.toString() + "', " + (user.isToggled(skill) ? 1 : 0) + ")");
                 }
             }
 

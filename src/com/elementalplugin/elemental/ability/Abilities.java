@@ -14,6 +14,7 @@ import org.bukkit.event.Event;
 
 import com.elementalplugin.elemental.Elemental;
 import com.elementalplugin.elemental.Manager;
+import com.elementalplugin.elemental.ability.AbilityInstance.Phase;
 import com.elementalplugin.elemental.ability.activation.SequenceInfo;
 import com.elementalplugin.elemental.ability.activation.Trigger;
 import com.elementalplugin.elemental.ability.activation.TriggerAction;
@@ -53,7 +54,7 @@ public class Abilities extends Manager {
 
     @Override
     protected void startup() {
-        DynamicLoader.load(Elemental.plugin(), "me.simplicitee.elemental.game", (c) -> AbilityInfo.class.isAssignableFrom(c) || AbilityInstance.class.isAssignableFrom(c), (clazz) -> {
+        DynamicLoader.loadDir(Elemental.plugin(), Elemental.getAddonsFolder(), true, (c) -> AbilityInfo.class.isAssignableFrom(c) || AbilityInstance.class.isAssignableFrom(c), (clazz) -> {
             if (AbilityInfo.class.isAssignableFrom(clazz)) {
                 try {
                     register((AbilityInfo) clazz.getDeclaredConstructor().newInstance());
@@ -82,7 +83,7 @@ public class Abilities extends Manager {
         while (iter.hasNext()) {
             AbilityInstance inst = iter.next();
 
-            switch (inst.getState()) {
+            switch (inst.getPhase()) {
             case UPDATING:
                 if (inst.update(deltaTime)) {
                     break;
@@ -90,6 +91,7 @@ public class Abilities extends Manager {
                 inst.stop();
             case STOPPING:
                 iter.remove();
+            case STARTING: //should not be in this phase at this point, but do nothing anyways
             }
         }
 
@@ -156,8 +158,9 @@ public class Abilities extends Manager {
     }
 
     public Optional<AbilityInfo> getInfo(String name) {
-        if (name == null || name.isBlank())
-            return null;
+        if (name == null || name.isBlank()) {
+            return Optional.empty();
+        }
 
         return cache.values().stream().map(c -> c.info).filter(a -> a.getName().equalsIgnoreCase(name)).findFirst();
     }
@@ -221,8 +224,10 @@ public class Abilities extends Manager {
         } else if (Events.call(new InstanceStartEvent(instance)).isCancelled()) {
             return false;
         }
+        
+        instance.start();
 
-        if (!instance.start()) {
+        if (instance.getPhase() == Phase.STOPPING) {
             return false;
         }
 
@@ -246,7 +251,7 @@ public class Abilities extends Manager {
         instance.stop();
     }
 
-    public void refreshPassives(AbilityUser user) {
+    public void refresh(AbilityUser user) {
         user.stopInstances();
 
         for (Skill skill : user.getSkills()) {
@@ -254,7 +259,7 @@ public class Abilities extends Manager {
                 if (!ability.hasPassive())
                     continue;
 
-                Abilities.manager().startInstance(this.execute(ability, Trigger.PASSIVE, user, null));
+                this.startInstance(this.execute(ability, Trigger.PASSIVE, user, null));
             }
         }
     }

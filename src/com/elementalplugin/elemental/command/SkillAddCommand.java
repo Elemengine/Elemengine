@@ -10,7 +10,6 @@ import org.bukkit.entity.Player;
 import com.elementalplugin.elemental.Manager;
 import com.elementalplugin.elemental.ability.AbilityUser;
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.Config;
 import com.elementalplugin.elemental.user.Users;
 
@@ -55,7 +54,7 @@ public class SkillAddCommand extends SubCommand {
             user = Manager.of(Users.class).get((Player) sender).get();
         }
 
-        Skill skill = Manager.of(Skills.class).get(args[0]);
+        Skill skill = Skill.valueOf(args[0]);
 
         if (skill == null) {
             sender.sendMessage(ChatColor.RED + "No skill found from '" + ChatColor.GOLD + args[0] + ChatColor.RED + "'");

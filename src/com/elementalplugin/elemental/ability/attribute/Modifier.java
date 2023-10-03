@@ -42,17 +42,19 @@ public interface Modifier {
      */
     public static Modifier multiply(Number modifier) {
         return (x) -> {
-            if (x instanceof Double) {
+            if (x.getClass() == Double.TYPE) {
                 return (double) x * modifier.doubleValue();
-            } else if (x instanceof Float) {
+            } else if (x.getClass() == Float.TYPE) {
                 return (float) x * modifier.floatValue();
-            } else if (x instanceof Long) {
+            } else if (x.getClass() == Long.TYPE) {
                 return (long) x * modifier.longValue();
-            } else if (x instanceof Integer) {
+            } else if (x.getClass() == Integer.TYPE) {
                 return (int) x * modifier.intValue();
-            } else {
-                return x;
-            }
+            } else if (x.getClass() == Short.TYPE) {
+                return (short) x * modifier.shortValue();
+            } 
+            
+            return x;
         };
     }
 
@@ -64,17 +66,19 @@ public interface Modifier {
      */
     public static Modifier add(Number modifier) {
         return (x) -> {
-            if (x instanceof Double) {
+            if (x.getClass() == Double.TYPE) {
                 return (double) x + modifier.doubleValue();
-            } else if (x instanceof Float) {
+            } else if (x.getClass() == Float.TYPE) {
                 return (float) x + modifier.floatValue();
-            } else if (x instanceof Long) {
+            } else if (x.getClass() == Long.TYPE) {
                 return (long) x + modifier.longValue();
-            } else if (x instanceof Integer) {
+            } else if (x.getClass() == Integer.TYPE) {
                 return (int) x + modifier.intValue();
-            } else {
-                return x;
-            }
+            } else if (x.getClass() == Short.TYPE) {
+                return (short) x + modifier.shortValue();
+            } 
+            
+            return x;
         };
     }
 
@@ -86,17 +90,19 @@ public interface Modifier {
      */
     public static Modifier subtract(Number modifier) {
         return (x) -> {
-            if (x instanceof Double) {
+            if (x.getClass() == Double.TYPE) {
                 return (double) x - modifier.doubleValue();
-            } else if (x instanceof Float) {
+            } else if (x.getClass() == Float.TYPE) {
                 return (float) x - modifier.floatValue();
-            } else if (x instanceof Long) {
+            } else if (x.getClass() == Long.TYPE) {
                 return (long) x - modifier.longValue();
-            } else if (x instanceof Integer) {
+            } else if (x.getClass() == Integer.TYPE) {
                 return (int) x - modifier.intValue();
-            } else {
-                return x;
-            }
+            } else if (x.getClass() == Short.TYPE) {
+                return (short) x - modifier.shortValue();
+            } 
+            
+            return x;
         };
     }
 
@@ -111,17 +117,42 @@ public interface Modifier {
         return (x) -> {
             if (modifier.doubleValue() == 0.0) {
                 return x;
-            } else if (x instanceof Double) {
+            } else if (x.getClass() == Double.TYPE) {
                 return (double) x / modifier.doubleValue();
-            } else if (x instanceof Float) {
+            } else if (x.getClass() == Float.TYPE) {
                 return (float) x / modifier.floatValue();
-            } else if (x instanceof Long) {
+            } else if (x.getClass() == Long.TYPE) {
                 return (long) x / modifier.longValue();
-            } else if (x instanceof Integer) {
+            } else if (x.getClass() == Integer.TYPE) {
                 return (int) x / modifier.intValue();
-            } else {
-                return x;
+            } else if (x.getClass() == Short.TYPE) {
+                return (short) x / modifier.shortValue();
             }
+            
+            return x;
+        };
+    }
+    
+    /**
+     * Returns a premade modifier for doing percents. 
+     * @param percent percent to take, from 0 to 100
+     * @return percent modifier
+     */
+    public static Modifier percent(Number percent) {
+        return x -> {
+            if (x.getClass() == Double.TYPE) {
+                return (double) x * percent.doubleValue() / 100.0;
+            } else if (x.getClass() == Float.TYPE) {
+                return (float) x * percent.floatValue() / 100.0f;
+            } else if (x.getClass() == Long.TYPE) {
+                return (long) x * percent.longValue() / 100l;
+            } else if (x.getClass() == Integer.TYPE) {
+                return (int) x * percent.intValue() / 100;
+            } else if (x.getClass() == Short.TYPE) {
+                return (short) x * percent.shortValue() / 100;
+            }
+            
+            return x;
         };
     }
 }

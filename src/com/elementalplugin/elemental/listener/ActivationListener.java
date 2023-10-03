@@ -103,7 +103,7 @@ public class ActivationListener implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     private void onUserSkillsChange(SkillChangeEvent event) {
         if (event.getHolder() instanceof AbilityUser) {
-            Threads.schedule(() -> ((AbilityUser) event.getHolder()).refreshPassives(), new ScheduleDelay(1));
+            Threads.schedule(() -> ((AbilityUser) event.getHolder()).refresh(), new ScheduleDelay(1));
         }
     }
 }

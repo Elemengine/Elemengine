@@ -29,7 +29,7 @@ public class TempBlock {
         config.addDefault("GlobalDuration", 60000);
         config.save();
         
-        GLOBAL_DURATION = config.getValue(FileConfiguration::getLong, "GlobalDuration");
+        GLOBAL_DURATION = config.get(FileConfiguration::getLong, "GlobalDuration");
     }
 
     private Block block;

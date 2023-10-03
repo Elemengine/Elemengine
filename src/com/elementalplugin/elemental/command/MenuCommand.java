@@ -18,7 +18,6 @@ import com.elementalplugin.elemental.Elemental;
 import com.elementalplugin.elemental.ability.Abilities;
 import com.elementalplugin.elemental.ability.AbilityInfo;
 import com.elementalplugin.elemental.skill.Skill;
-import com.elementalplugin.elemental.skill.Skills;
 import com.elementalplugin.elemental.storage.Config;
 import com.elementalplugin.elemental.storage.Configure;
 import com.elementalplugin.elemental.user.PlayerUser;
@@ -131,7 +130,7 @@ public class MenuCommand extends SubCommand {
                 .items(
                     Abilities.manager().registered().stream()
                     .sorted((a1, a2) -> a1.getName().compareToIgnoreCase(a2.getName()))
-                    .sorted((a1, a2) -> a1.getSkill().getName().compareToIgnoreCase(a2.getSkill().getName()))
+                    .sorted((a1, a2) -> a1.getSkill().getDisplayName().compareToIgnoreCase(a2.getSkill().getDisplayName()))
                     .collect(Collectors.toList())
                 )
                 .filter((player, ability) -> player.canBind(ability))
@@ -153,14 +152,14 @@ public class MenuCommand extends SubCommand {
                 .height(Height.THREE)
                 .border(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
                 .items(
-                    Skills.manager().registered().stream()
-                    .sorted((s1, s2) -> s1.getName().compareToIgnoreCase(s2.getName()))
+                    Skill.streamValues()
+                    .sorted((s1, s2) -> s1.getDisplayName().compareToIgnoreCase(s2.getDisplayName()))
                     .collect(Collectors.toList())
                 )
                 .filter((player, skill) -> skill.getParents().isEmpty() && !player.hasSkill(skill))
                 .buttonizer((player, skill) -> {
                     return new Button(skillItem(skill, false, player), event -> {
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "elemental choose " + skill.getName() + " " + event.getViewer().getEntity().getName());
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "elemental choose " + skill.toString() + " " + event.getViewer().getEntity().getName());
                         menus.get(0).open(event.getViewer());
                     });
                 })
@@ -174,8 +173,8 @@ public class MenuCommand extends SubCommand {
                 .height(Height.SIX)
                 .border(Material.RED_STAINED_GLASS_PANE)
                 .items(
-                    Skills.manager().registered().stream()
-                    .sorted((s1, s2) -> s1.getName().compareToIgnoreCase(s2.getName()))
+                    Skill.streamValues()
+                    .sorted((s1, s2) -> s1.getDisplayName().compareToIgnoreCase(s2.getDisplayName()))
                     .collect(Collectors.toList())
                 )
                 .filter((player, skill) -> {
@@ -205,7 +204,7 @@ public class MenuCommand extends SubCommand {
             Menu.paged(Skill.class)
                 .title("&dManage Skills")
                 .height(Height.SIX)
-                .items(Skills.manager().registered())
+                .items(Arrays.asList(Skill.values()))
                 .filter((player, skill) -> player.hasSkill(skill))
                 .buttonizer((player, skill) -> {
                     return new Button(skillItem(skill, true, player), event -> {
@@ -240,7 +239,7 @@ public class MenuCommand extends SubCommand {
     }
     
     private ItemStack skillItem(Skill skill, boolean manageMenu, PlayerUser user) {
-        return Items.create(skill.getMaterialRepresentation(), meta -> {
+        return Items.create(skill.getMaterial(), meta -> {
             meta.setDisplayName(skill.getColoredName());
             
             List<String> lore = new ArrayList<>();
@@ -259,7 +258,7 @@ public class MenuCommand extends SubCommand {
     }
 
     private ItemStack abilityItem(AbilityInfo info) {
-        return Items.create(info.getSkill().getMaterialRepresentation(), meta -> {
+        return Items.create(info.getSkill().getMaterial(), meta -> {
             meta.setDisplayName(info.getDisplayColor() + info.getName());
             meta.setLore(Arrays.asList(info.getDescription()));
             meta.addItemFlags(ItemFlag.values());
@@ -271,7 +270,7 @@ public class MenuCommand extends SubCommand {
         String bind = ChatColor.WHITE + "NONE";
 
         if (info != null) {
-            type = info.getSkill().getMaterialRepresentation();
+            type = info.getSkill().getMaterial();
             bind = info.getDisplay();
         }
 
