@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.ability.Bindable;
+import com.elemengine.elemengine.ability.type.Bindable;
 
 public class AbilityBinds implements Iterable<AbilityInfo> {
 

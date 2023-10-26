@@ -9,8 +9,8 @@ import org.bukkit.command.CommandSender;
 
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.ability.Bindable;
-import com.elemengine.elemengine.ability.combo.Combo;
+import com.elemengine.elemengine.ability.type.Bindable;
+import com.elemengine.elemengine.ability.type.combo.Combo;
 import com.elemengine.elemengine.skill.Skill;
 import com.elemengine.elemengine.storage.Config;
 

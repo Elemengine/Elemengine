@@ -14,5 +14,5 @@ import java.lang.annotation.Target;
  */
 public @interface TriggerHandler {
 
-    public String value();
+    public Trigger value();
 }

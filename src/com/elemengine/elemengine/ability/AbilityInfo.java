@@ -13,17 +13,6 @@ import com.elemengine.elemengine.storage.Configurable;
 import net.md_5.bungee.api.ChatColor;
 
 public abstract class AbilityInfo implements Configurable, Listener {
-    
-    protected static final String LEFT_CLICK = Trigger.ID_LEFT_CLICK;
-    protected static final String RIGHT_CLICK_BLOCK = Trigger.ID_RIGHT_CLICK_BLOCK;
-    protected static final String RIGHT_CLICK_ENTITY = Trigger.ID_RIGHT_CLICK_ENTITY;
-    protected static final String SNEAK_DOWN = Trigger.ID_SNEAK_DOWN;
-    protected static final String SNEAK_UP = Trigger.ID_SNEAK_UP;
-    protected static final String SPRINT_ON = Trigger.ID_SPRINT_ON;
-    protected static final String SPRINT_OFF = Trigger.ID_SPRINT_OFF;
-    protected static final String DAMAGED = Trigger.ID_DAMAGED;
-    protected static final String PASSIVE = Trigger.ID_PASSIVE;
-    protected static final String COMBO = Trigger.ID_COMBO;
 
     private String name, author, version, description;
     private Skill skill;
@@ -86,10 +75,6 @@ public abstract class AbilityInfo implements Configurable, Listener {
 
     @Override
     public void postProcessed(Config config) {}
-
-    public boolean hasPassive() {
-        return false;
-    }
 
     protected void onRegister() {}
 

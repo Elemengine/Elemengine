@@ -1,7 +1,6 @@
 package com.elemengine.elemengine.ability;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.util.HashMap;
@@ -19,12 +18,12 @@ import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.ability.AbilityInstance.Phase;
 import com.elemengine.elemengine.ability.activation.SequenceInfo;
 import com.elemengine.elemengine.ability.activation.Trigger;
-import com.elemengine.elemengine.ability.activation.TriggerAction;
-import com.elemengine.elemengine.ability.activation.TriggerHandler;
 import com.elemengine.elemengine.ability.attribute.Attribute;
-import com.elemengine.elemengine.ability.combo.Combo;
-import com.elemengine.elemengine.ability.combo.ComboTree;
-import com.elemengine.elemengine.ability.combo.ComboValidator;
+import com.elemengine.elemengine.ability.type.Bindable;
+import com.elemengine.elemengine.ability.type.Passive;
+import com.elemengine.elemengine.ability.type.combo.Combo;
+import com.elemengine.elemengine.ability.type.combo.ComboTree;
+import com.elemengine.elemengine.ability.type.combo.ComboValidator;
 import com.elemengine.elemengine.event.ability.InstanceStartEvent;
 import com.elemengine.elemengine.event.ability.InstanceStopEvent;
 import com.elemengine.elemengine.event.ability.InstanceStopEvent.Reason;
@@ -37,7 +36,7 @@ import com.google.common.base.Preconditions;
 
 public class Abilities extends Manager {
 
-    private Map<Class<? extends AbilityInfo>, CachedAbility> cache = new HashMap<>();
+    private Map<Class<? extends AbilityInfo>, AbilityInfo> cache = new HashMap<>();
     private Map<String, AbilityInfo> combos = new HashMap<>();
     private ComboTree root = new ComboTree();
 
@@ -86,14 +85,14 @@ public class Abilities extends Manager {
             AbilityInstance inst = iter.next();
 
             switch (inst.getPhase()) {
-            case UPDATING:
-                if (inst.update(deltaTime)) {
-                    break;
-                }
-                inst.stop();
-            case STOPPING:
-                iter.remove();
-            case STARTING: //should not be in this phase at this point, but do nothing anyways
+                case UPDATING:
+                    if (inst.update(deltaTime)) {
+                        break;
+                    }
+                    inst.stop();
+                case STOPPING:
+                    iter.remove();
+                case STARTING:
             }
         }
 
@@ -108,38 +107,9 @@ public class Abilities extends Manager {
 
     public <T extends AbilityInfo> void register(T ability) {
         Preconditions.checkArgument(ability != null, "Cannot register null ability");
-        Preconditions.checkArgument(!cache.values().stream().anyMatch(a -> a.info.getName().equalsIgnoreCase(ability.getName())), "Attmempted to load an ability with existing name: " + ability.getName());
+        Preconditions.checkArgument(!cache.values().stream().anyMatch(a -> a.getName().equalsIgnoreCase(ability.getName())), "Attmempted to load an ability with existing name: " + ability.getName());
 
-        CachedAbility cached = new CachedAbility(Config.process(ability));
-
-        for (Method method : ability.getClass().getDeclaredMethods()) {
-            if (method.isBridge() || method.isSynthetic()) {
-                continue;
-            }
-
-            if (method.isAnnotationPresent(TriggerHandler.class)) {
-                if (method.getReturnType() != Void.TYPE) {
-                    Elemengine.plugin().getLogger().warning("Ability " + ability.getName() + " trigger handler " + method.getName() + " should have return type 'void'.");
-                    continue;
-                }
-
-                Class<?>[] params = method.getParameterTypes();
-                if (params.length != 1) {
-                    System.out.println("Ability" + ability.getName() + " trigger handler " + method.getName() + " must have one parameter.");
-                    continue;
-                } else if (params[0] != TriggerAction.class) {
-                    System.out.println("Ability" + ability.getName() + " trigger handler " + method.getName() + " param must be " + TriggerAction.class.getSimpleName());
-                    continue;
-                }
-
-                method.setAccessible(true);
-                Trigger.of(method.getAnnotation(TriggerHandler.class).value()).ifPresent((t) -> {
-                    cached.triggerHandlers.put(t.toString().toLowerCase(), method);
-                });
-            }
-        }
-
-        cache.put(ability.getClass(), cached);
+        cache.put(ability.getClass(), Config.process(ability));
 
         if (ability instanceof Combo) {
             try {
@@ -176,7 +146,7 @@ public class Abilities extends Manager {
     public <T extends AbilityInfo> Optional<T> getInfo(Class<T> clazz) {
         if (clazz == null) return null;
         if (cache.get(clazz) == null) return null;
-        return Optional.of(clazz.cast(cache.get(clazz).info));
+        return Optional.of(clazz.cast(cache.get(clazz)));
     }
 
     public Optional<AbilityInfo> getInfo(String name) {
@@ -184,33 +154,15 @@ public class Abilities extends Manager {
             return Optional.empty();
         }
 
-        return cache.values().stream().map(c -> c.info).filter(a -> a.getName().equalsIgnoreCase(name)).findFirst();
+        return cache.values().stream().filter(a -> a.getName().equalsIgnoreCase(name)).findFirst();
     }
 
     public Set<AbilityInfo> fromSkill(Skill skill) {
-        return cache.values().stream().map(c -> c.info).filter(a -> a.getSkill() == skill).collect(Collectors.toSet());
+        return cache.values().stream().filter(a -> a.getSkill() == skill).collect(Collectors.toSet());
     }
 
     public Set<AbilityInfo> getUserBindables(AbilityUser user) {
-        return cache.values().stream().map(c -> c.info).filter(user::canBind).collect(Collectors.toSet());
-    }
-
-    private AbilityInstance execute(AbilityInfo info, Trigger trigger, AbilityUser user, Event provider) {
-        Method executor = cache.get(info.getClass()).triggerHandlers.get(trigger.toString().toLowerCase());
-
-        if (executor == null) {
-            return null;
-        }
-
-        TriggerAction action = new TriggerAction(user, provider);
-
-        try {
-            executor.invoke(info, action);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return action.getOutput();
+        return cache.values().stream().filter(user::canBind).collect(Collectors.toSet());
     }
 
     public boolean activate(AbilityUser user, Trigger trigger, Event provider) {
@@ -225,17 +177,20 @@ public class Abilities extends Manager {
         if (ability == null) {
             return false;
         }
+        
+        AbilityInstance instance = null;
 
         if (trigger.canCombo()) {
             ComboValidator combo = user.updateCombos(ability, trigger, root);
             if (combo != null) {
                 ability = combos.get(SequenceInfo.stringify(combo.getSequence()));
-                trigger = Trigger.COMBO;
-                provider = null;
+                instance = ((Combo) ability).createComboInstance(user);
             }
+        } else if (ability.canActivate(user, trigger)) {
+            instance = ((Bindable) ability).createBindInstance(user, trigger, provider);
         }
 
-        return ability.canActivate(user, trigger) && this.startInstance(this.execute(ability, trigger, user, provider));
+        return this.startInstance(instance);
     }
 
     public boolean startInstance(AbilityInstance instance) {
@@ -278,30 +233,18 @@ public class Abilities extends Manager {
 
         for (Skill skill : user.getSkills()) {
             for (AbilityInfo ability : Abilities.manager().fromSkill(skill)) {
-                if (!ability.hasPassive())
-                    continue;
-
-                this.startInstance(this.execute(ability, Trigger.PASSIVE, user, null));
+                if (ability instanceof Passive passive) {
+                    this.startInstance(passive.createPassiveInstance(user));
+                }
             }
         }
     }
 
     public Set<AbilityInfo> registered() {
-        return new HashSet<>(cache.values().stream().map(c -> c.info).toList());
+        return new HashSet<>(cache.values());
     }
 
     public static Abilities manager() {
         return Manager.of(Abilities.class);
-    }
-
-    private static class CachedAbility {
-
-        private AbilityInfo info;
-        private Map<String, Method> triggerHandlers;
-
-        private CachedAbility(AbilityInfo info) {
-            this.info = info;
-            this.triggerHandlers = new HashMap<>();
-        }
     }
 }

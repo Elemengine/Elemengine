@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.ability.combo;
+package com.elemengine.elemengine.ability.type.combo;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

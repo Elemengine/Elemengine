@@ -16,7 +16,7 @@ import org.bukkit.scoreboard.Team;
 import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.ability.Bindable;
+import com.elemengine.elemengine.ability.type.Bindable;
 import com.elemengine.elemengine.user.PlayerUser;
 import com.elemengine.elemengine.user.Users;
 import com.elemengine.elemengine.user.Users.UserCast;

@@ -25,8 +25,9 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import com.elemengine.elemengine.ability.activation.Trigger;
-import com.elemengine.elemengine.ability.combo.ComboTree;
-import com.elemengine.elemengine.ability.combo.ComboValidator;
+import com.elemengine.elemengine.ability.type.Bindable;
+import com.elemengine.elemengine.ability.type.combo.ComboTree;
+import com.elemengine.elemengine.ability.type.combo.ComboValidator;
 import com.elemengine.elemengine.ability.util.AbilityBinds;
 import com.elemengine.elemengine.ability.util.Cooldown;
 import com.elemengine.elemengine.ability.util.Stamina;
@@ -43,13 +44,14 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.ComponentBuilder.FormatRetention;
 
 public abstract class AbilityUser extends SkillHolder {
+    
+    protected final LivingEntity entity;
 
     private AbilityBinds binds = new AbilityBinds();
     private Map<String, Cooldown> cooldowns = new HashMap<>();
     private PriorityQueue<Cooldown> cdQueue = new PriorityQueue<>(12, (a, b) -> (int) (a.getEndTime() - b.getEndTime()));
     private List<ComboValidator> sequences = new LinkedList<>();
     private boolean usedActionBar = false;
-    private LivingEntity entity;
     private Stamina stamina;
     private BigInteger abilityFlags = BigInteger.ZERO;
 
@@ -500,7 +502,7 @@ public abstract class AbilityUser extends SkillHolder {
      */
     public abstract Vector getDirection();
 
-    public abstract Optional<Entity> getTargetEntity(double range, double raySize, FluidCollisionMode fluid, Predicate<Entity> filter);
+    public abstract Optional<Entity> getTargetEntity(double range, double raySize, Predicate<Entity> filter);
 
     /**
      * Gets the unique id for this user

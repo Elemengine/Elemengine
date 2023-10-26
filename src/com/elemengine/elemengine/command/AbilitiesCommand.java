@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.ability.Bindable;
+import com.elemengine.elemengine.ability.type.Bindable;
 import com.elemengine.elemengine.skill.Skill;
 import com.elemengine.elemengine.storage.Config;
 
