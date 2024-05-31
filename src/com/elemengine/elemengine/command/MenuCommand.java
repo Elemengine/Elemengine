@@ -17,9 +17,9 @@ import org.bukkit.inventory.meta.SkullMeta;
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.skill.Skill;
-import com.elemengine.elemengine.storage.Config;
-import com.elemengine.elemengine.storage.Configure;
+import com.elemengine.elemengine.element.Element;
+import com.elemengine.elemengine.storage.configuration.Config;
+import com.elemengine.elemengine.storage.configuration.Configure;
 import com.elemengine.elemengine.user.PlayerUser;
 import com.elemengine.elemengine.user.Users;
 import com.elemengine.elemengine.util.Items;
@@ -60,6 +60,11 @@ public class MenuCommand extends SubCommand {
             sender.sendMessage(ChatColor.RED + "Command is player-only!");
             return;
         }
+        
+        if (!hasPermission(sender)) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to perform that command.");
+            return;
+        }
 
         PlayerUser player = Users.manager().get((Player) sender).getAs(PlayerUser.class);
         
@@ -82,7 +87,7 @@ public class MenuCommand extends SubCommand {
         //index 0 - main menu
         menus.add(
             Menu.builder()
-                .title("&dMenu")
+                .title("Bending Menu")
                 .height(Height.FIVE)
                 .layout((user, layout) -> {
                     user.getBinds().enumerator().forEachRemaining(bind -> {
@@ -101,14 +106,14 @@ public class MenuCommand extends SubCommand {
                         menus.get(4).open(user);
                     }));
                     
-                    if (user.hasPermission("elemental.command.add")) {
+                    if (user.hasPermission("elemengine.command.add")) {
                         layout.insert(13, new Button(addMenu(), event -> {
                             menus.get(3).open(user);
                         }));
                     }
                     
-                    boolean canChoose = (user.getSkills().isEmpty() && user.hasPermission("elemengine.command.choose"))
-                                     || (!user.getSkills().isEmpty() && user.hasPermission("elemengine.command.rechoose"));
+                    boolean canChoose = (user.getElements().isEmpty() && user.hasPermission("elemengine.command.choose"))
+                                     || (!user.getElements().isEmpty() && user.hasPermission("elemengine.command.rechoose"));
                     
                     if (canChoose) {
                         layout.insert(14, new Button(chooseMenu(), event -> {
@@ -124,13 +129,11 @@ public class MenuCommand extends SubCommand {
         //index 1 - bind menu
         menus.add(
             Menu.paged(AbilityInfo.class)
-                .title("&aBind Ability")
+                .title("Bind Ability")
                 .height(Height.SIX)
-                .border(Material.GREEN_STAINED_GLASS_PANE)
                 .items(
                     Abilities.manager().registered().stream()
                     .sorted((a1, a2) -> a1.getName().compareToIgnoreCase(a2.getName()))
-                    .sorted((a1, a2) -> a1.getSkill().getDisplayName().compareToIgnoreCase(a2.getSkill().getDisplayName()))
                     .collect(Collectors.toList())
                 )
                 .filter((player, ability) -> player.canBind(ability))
@@ -147,19 +150,18 @@ public class MenuCommand extends SubCommand {
         
         //index 2 - choose menu
         menus.add(
-            Menu.paged(Skill.class)
-                .title("&bChoose Skill")
+            Menu.paged(Element.class)
+                .title("Choose Element")
                 .height(Height.THREE)
-                .border(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
                 .items(
-                    Skill.streamValues()
+                    Element.streamValues()
                     .sorted((s1, s2) -> s1.getDisplayName().compareToIgnoreCase(s2.getDisplayName()))
                     .collect(Collectors.toList())
                 )
-                .filter((player, skill) -> skill.getParents().isEmpty() && !player.hasSkill(skill))
-                .buttonizer((player, skill) -> {
-                    return new Button(skillItem(skill, false, player), event -> {
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "elemengine choose " + skill.toString() + " " + event.getViewer().getEntity().getName());
+                .filter((player, element) -> element.getParents().isEmpty() && !player.hasElement(element))
+                .buttonizer((player, element) -> {
+                    return new Button(elementItem(element, false, player), event -> {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "elemengine choose " + element.toString() + " " + event.getViewer().getEntity().getName());
                         menus.get(0).open(event.getViewer());
                     });
                 })
@@ -168,50 +170,49 @@ public class MenuCommand extends SubCommand {
         
         //index 3 - add menu
         menus.add(
-            Menu.paged(Skill.class)
-                .title("&cAdd Skills")
+            Menu.paged(Element.class)
+                .title("Add Elements")
                 .height(Height.SIX)
-                .border(Material.RED_STAINED_GLASS_PANE)
                 .items(
-                    Skill.streamValues()
+                    Element.streamValues()
                     .sorted((s1, s2) -> s1.getDisplayName().compareToIgnoreCase(s2.getDisplayName()))
                     .collect(Collectors.toList())
                 )
-                .filter((player, skill) -> {
-                    if (player.hasSkill(skill)) {
+                .filter((player, element) -> {
+                    if (player.hasElement(element)) {
                         return false;
                     }
                     
-                    for (Skill parent : skill.getParents()) {
-                        if (!player.hasSkill(parent)) {
+                    for (Element parent : element.getParents()) {
+                        if (!player.hasElement(parent)) {
                             return false;
                         }
                     }
                     
                     return true;
                 })
-                .buttonizer((player, skill) -> {
-                    return new Button(skillItem(skill, false, player), event -> {
-                        event.getViewer().addSkill(skill);
+                .buttonizer((player, element) -> {
+                    return new Button(elementItem(element, false, player), event -> {
+                        event.getViewer().addElement(element);
                         menus.get(0).open(event.getViewer());
                     });
                 })
                 .build()
         );
         
-        //index 4 - skill menu
+        //index 4 - element menu
         menus.add(
-            Menu.paged(Skill.class)
-                .title("&dManage Skills")
+            Menu.paged(Element.class)
+                .title("Manage Elements")
                 .height(Height.SIX)
-                .items(Arrays.asList(Skill.values()))
-                .filter((player, skill) -> player.hasSkill(skill))
-                .buttonizer((player, skill) -> {
-                    return new Button(skillItem(skill, true, player), event -> {
+                .items(Arrays.asList(Element.values()))
+                .filter((player, element) -> player.hasElement(element))
+                .buttonizer((player, element) -> {
+                    return new Button(elementItem(element, true, player), event -> {
                         if (event.getClickType() == ClickType.LEFT) {
-                            event.getViewer().toggle(skill);
+                            event.getViewer().toggle(element);
                         } else if (event.getClickType() == ClickType.RIGHT && event.getViewer().hasPermission("elemengine.command.remove")) {
-                            event.getViewer().removeSkill(skill);
+                            event.getViewer().removeElement(element);
                         }
                         menus.get(0).open(event.getViewer());
                     });
@@ -224,26 +225,26 @@ public class MenuCommand extends SubCommand {
     
     private ItemStack addMenu() {
         return Items.create(Material.FEATHER, meta -> {
-            meta.setDisplayName(ChatColor.GREEN + "Add Skills");
-            meta.setLore(Arrays.asList(ChatColor.WHITE + "Open a menu to gain new skills"));
+            meta.setDisplayName(ChatColor.GREEN + "Add Elements");
+            meta.setLore(Arrays.asList(ChatColor.WHITE + "Open a menu to gain new elements"));
             meta.addItemFlags(ItemFlag.values());
         });
     }
     
     private ItemStack chooseMenu() {
         return Items.create(Material.PAPER, meta -> {
-            meta.setDisplayName(ChatColor.GREEN + "Choose Skill");
-            meta.setLore(Arrays.asList(ChatColor.WHITE + "Open a menu to choose a different skill"));
+            meta.setDisplayName(ChatColor.GREEN + "Choose Element");
+            meta.setLore(Arrays.asList(ChatColor.WHITE + "Open a menu to choose a different element"));
             meta.addItemFlags(ItemFlag.values());
         });
     }
     
-    private ItemStack skillItem(Skill skill, boolean manageMenu, PlayerUser user) {
-        return Items.create(skill.getMaterial(), meta -> {
-            meta.setDisplayName(skill.getColoredName());
+    private ItemStack elementItem(Element element, boolean manageMenu, PlayerUser user) {
+        return Items.create(element.getMaterial(), meta -> {
+            meta.setDisplayName(element.getColoredName());
             
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.WHITE + skill.getDescription());
+            lore.add(ChatColor.WHITE + element.getDescription());
             
             if (manageMenu) {
                 lore.add(ChatColor.LIGHT_PURPLE + "Left: " + ChatColor.YELLOW + "Toggle");
@@ -258,9 +259,9 @@ public class MenuCommand extends SubCommand {
     }
 
     private ItemStack abilityItem(AbilityInfo info) {
-        return Items.create(info.getSkill().getMaterial(), meta -> {
-            meta.setDisplayName(info.getDisplayColor() + info.getName());
-            meta.setLore(Arrays.asList(info.getDescription()));
+        return Items.create(Material.PAPER, meta -> {
+            meta.setDisplayName(info.createComponent().toLegacyText());
+            meta.setLore(List.of(info.getDescription()));
             meta.addItemFlags(ItemFlag.values());
         });
     }
@@ -270,8 +271,8 @@ public class MenuCommand extends SubCommand {
         String bind = ChatColor.WHITE + "NONE";
 
         if (info != null) {
-            type = info.getSkill().getMaterial();
-            bind = info.getDisplay();
+            type = Material.PAPER;
+            bind = info.createComponent().toLegacyText();
         }
 
         String bound = bind;
@@ -288,7 +289,7 @@ public class MenuCommand extends SubCommand {
         SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
 
         meta.setDisplayName(ChatColor.WHITE + player.getEntity().getName());
-        meta.setLore(player.getSkills().stream().map(s -> "- " + s.getColoredName()).collect(Collectors.toList()));
+        meta.setLore(player.getElements().stream().map(s -> "- " + s.getColoredName()).collect(Collectors.toList()));
         meta.setOwnerProfile(player.getEntity().getPlayerProfile());
         meta.addItemFlags(ItemFlag.values());
 

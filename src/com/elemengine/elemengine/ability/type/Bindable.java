@@ -8,7 +8,7 @@ import com.elemengine.elemengine.ability.activation.Trigger;
 
 public interface Bindable {
     
-    public AbilityInstance createBindInstance(AbilityUser user, Trigger trigger, Event event);
+    public AbilityInstance<?> createBindInstance(AbilityUser user, Trigger trigger, Event event);
 
     public String getBindUsage();
 

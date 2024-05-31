@@ -10,8 +10,8 @@ import org.bukkit.util.BoundingBox;
 
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.Manager;
-import com.elemengine.elemengine.storage.CollisionData;
-import com.elemengine.elemengine.storage.CollisionFile;
+import com.elemengine.elemengine.storage.collision.CollisionData;
+import com.elemengine.elemengine.storage.collision.CollisionFile;
 import com.elemengine.elemengine.util.data.Pair;
 
 public final class Collisions extends Manager {

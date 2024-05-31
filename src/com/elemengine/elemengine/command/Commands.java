@@ -4,10 +4,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.bukkit.command.Command;
@@ -18,7 +20,7 @@ import org.bukkit.command.TabCompleter;
 
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.Manager;
-import com.elemengine.elemengine.storage.Config;
+import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.util.reflect.DynamicLoader;
 import com.google.common.base.Preconditions;
 
@@ -57,11 +59,11 @@ public class Commands extends Manager implements CommandExecutor, TabCompleter {
         main.clear();
     }
 
-    public void register(SubCommand cmd) {
+    public UUID register(SubCommand cmd) {
         Preconditions.checkArgument(cmd != null, "Cannot register null command!");
         Preconditions.checkArgument(!cmd.getName().isBlank(), "Cannot register command with empty name!");
         Preconditions.checkArgument(!cache.containsKey(cmd.getName().toLowerCase()), "Cannot register command with existing name!");
-
+        
         Config.process(cmd);
 
         cache.put(cmd.getName().toLowerCase(), cmd);
@@ -79,6 +81,20 @@ public class Commands extends Manager implements CommandExecutor, TabCompleter {
             }
 
             cache.put(alias.toLowerCase(), cmd);
+        }
+        
+        cmd.uuid = UUID.randomUUID();
+        
+        return cmd.uuid;
+    }
+    
+    public void unregister(UUID uuid) {
+        Iterator<SubCommand> iter = cache.values().iterator();
+        while (iter.hasNext()) {
+            if (iter.next().uuid.equals(uuid)) {
+                iter.remove();
+                break;
+            }
         }
     }
 

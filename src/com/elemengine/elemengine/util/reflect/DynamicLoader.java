@@ -34,27 +34,29 @@ public class DynamicLoader {
             }
             
             String jarLoc = resources.nextElement().getPath();
-            JarFile jar = new JarFile(new File(URLDecoder.decode(jarLoc.substring(5, jarLoc.length() - path.length() - 2), "UTF-8")));
-            Enumeration<JarEntry> entries = jar.entries();
-
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                if (!entry.getName().endsWith(".class") || entry.getName().contains("$")) {
-                    continue;
-                }
-
-                String className = entry.getName().replace('/', '.').substring(0, entry.getName().length() - 6);
-                if (!className.startsWith(path)) {
-                    continue;
-                }
-
-                Class<?> clazz = Class.forName(className, true, loader);
-                if (clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
-                    continue;
-                }
-
-                if (parentClass.isAssignableFrom(clazz)) {
-                    consumer.accept(parentClass.cast(clazz.getDeclaredConstructor().newInstance()));
+            try (JarFile jar = new JarFile(new File(URLDecoder.decode(jarLoc.substring(5, jarLoc.length() - path.length() - 2), "UTF-8")))) {
+                Enumeration<JarEntry> entries = jar.entries();
+    
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    if (!entry.getName().endsWith(".class")) {
+                        continue;
+                    }
+                    
+                    String className = entry.getName().replace('/', '.').substring(0, entry.getName().length() - 6);
+    
+                    if (!className.startsWith(path)) {
+                        continue;
+                    }
+                    
+                    Class<?> clazz = Class.forName(className, true, loader);
+                    if (entry.getName().contains("$") || clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
+                        continue;
+                    }
+    
+                    if (parentClass.isAssignableFrom(clazz)) {
+                        consumer.accept(parentClass.cast(clazz.getDeclaredConstructor().newInstance()));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -71,27 +73,29 @@ public class DynamicLoader {
         try {
             Enumeration<URL> resources = loader.getResources(path.replace('.', '/'));
             String jarLoc = resources.nextElement().getPath();
-            JarFile jar = new JarFile(new File(URLDecoder.decode(jarLoc.substring(5, jarLoc.length() - path.length() - 2), "UTF-8")));
-            Enumeration<JarEntry> entries = jar.entries();
-
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                if (!entry.getName().endsWith(".class") || entry.getName().contains("$")) {
-                    continue;
-                }
-
-                String className = entry.getName().replace('/', '.').substring(0, entry.getName().length() - 6);
-                if (!className.startsWith(path)) {
-                    continue;
-                }
-
-                Class<?> clazz = Class.forName(className, true, loader);
-                if (clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
-                    continue;
-                }
-
-                if (filter.test(clazz)) {
-                    consumer.accept(clazz);
+            try (JarFile jar = new JarFile(new File(URLDecoder.decode(jarLoc.substring(5, jarLoc.length() - path.length() - 2), "UTF-8")))) {
+                Enumeration<JarEntry> entries = jar.entries();
+    
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    if (!entry.getName().endsWith(".class")) {
+                        continue;
+                    }
+                    
+                    String className = entry.getName().replace('/', '.').substring(0, entry.getName().length() - 6);
+    
+                    if (!className.startsWith(path)) {
+                        continue;
+                    }
+                    
+                    Class<?> clazz = Class.forName(className, true, loader);
+                    if (entry.getName().contains("$") || clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
+                        continue;
+                    }
+    
+                    if (filter.test(clazz)) {
+                        consumer.accept(clazz);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -127,13 +131,15 @@ public class DynamicLoader {
                     Enumeration<JarEntry> entries = jar.entries();
                     while (entries.hasMoreElements()) {
                         JarEntry entry = entries.nextElement();
-                        if (!entry.getName().endsWith(".class") || entry.getName().contains("$")) {
+                        
+                        if (!entry.getName().endsWith(".class")) {
                             continue;
                         }
                         
                         String className = entry.getName().replace('/', '.').substring(0, entry.getName().length() - 6);
                         Class<?> clazz = Class.forName(className, true, loader);
-                        if (clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
+                        
+                        if (entry.getName().contains("$") || clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
                             continue;
                         }
                         

@@ -1,7 +1,5 @@
 package com.elemengine.elemengine.temporary;
 
-import java.util.HashSet;
-
 import com.elemengine.elemengine.Manager;
 
 public class Temps extends Manager {
@@ -27,12 +25,14 @@ public class Temps extends Manager {
                 break;
             }
         }
+        
+        Molecule.updateAll();
     }
 
     @Override
     protected void clean() {
-        for (TempBlock tb : new HashSet<>(TempBlock.CACHE.values())) {
-            tb.revert();
+        for (TempBlock tb : TempBlock.CACHE.values()) {
+            tb.revertNoRemove();
         }
 
         TempBlock.CACHE.clear();

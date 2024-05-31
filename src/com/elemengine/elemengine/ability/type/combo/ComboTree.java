@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Queue;
 
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.ability.activation.SequenceInfo;
 import com.elemengine.elemengine.ability.activation.Trigger;
 
 public class ComboTree {

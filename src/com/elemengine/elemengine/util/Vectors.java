@@ -8,17 +8,18 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
 import com.elemengine.elemengine.util.data.AngleType;
 
 public class Vectors {
 
-    public static ImmutableVector RIGHT = new ImmutableVector(1.0, 0.0, 0.0);
-    public static ImmutableVector UP = new ImmutableVector(0.0, 1.0, 0.0);
-    public static ImmutableVector FORWARD = new ImmutableVector(0.0, 0.0, 1.0);
-    public static ImmutableVector LEFT = new ImmutableVector(-1.0, 0.0, 0.0);
-    public static ImmutableVector DOWN = new ImmutableVector(0.0, -1.0, 0.0);
-    public static ImmutableVector BACKWARD = new ImmutableVector(0.0, 0.0, -1.0);
+    public static final ImmutableVector RIGHT = new ImmutableVector(1.0, 0.0, 0.0);
+    public static final ImmutableVector UP = new ImmutableVector(0.0, 1.0, 0.0);
+    public static final ImmutableVector FORWARD = new ImmutableVector(0.0, 0.0, 1.0);
+    public static final ImmutableVector LEFT = new ImmutableVector(-1.0, 0.0, 0.0);
+    public static final ImmutableVector DOWN = new ImmutableVector(0.0, -1.0, 0.0);
+    public static final ImmutableVector BACKWARD = new ImmutableVector(0.0, 0.0, -1.0);
 
     private Vectors() {}
 
@@ -136,6 +137,14 @@ public class Vectors {
         double xz = Math.sqrt(1 - y * y);
         
         return new Vector(xz * Math.cos(theta), y, xz * Math.sin(theta));
+    }
+    
+    public static Vector3f random3F() {
+        double theta = ThreadLocalRandom.current().nextDouble(2 * Math.PI);
+        double y = ThreadLocalRandom.current().nextDouble(2) - 1;
+        double xz = Math.sqrt(1 - y * y);
+        
+        return new Vector3f((float) (xz * Math.sin(theta)), (float) y, (float) (xz * Math.cos(theta)));
     }
 
     public static RayTraceResult rayTrace(Location start, double maxDistance, FluidCollisionMode fluids, boolean ignorePassable, double raySize, Predicate<Entity> filter) {

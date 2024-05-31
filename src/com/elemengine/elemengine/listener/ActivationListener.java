@@ -18,7 +18,7 @@ import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.ability.activation.Trigger;
-import com.elemengine.elemengine.event.skill.SkillChangeEvent;
+import com.elemengine.elemengine.event.element.ElementChangeEvent;
 import com.elemengine.elemengine.user.Users;
 import com.elemengine.elemengine.util.Threads;
 import com.elemengine.elemengine.util.Threads.ScheduleDelay;
@@ -101,7 +101,7 @@ public class ActivationListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    private void onUserSkillsChange(SkillChangeEvent event) {
+    private void onUserElementsChange(ElementChangeEvent event) {
         if (event.getHolder() instanceof AbilityUser) {
             Threads.schedule(() -> ((AbilityUser) event.getHolder()).refresh(), new ScheduleDelay(1));
         }

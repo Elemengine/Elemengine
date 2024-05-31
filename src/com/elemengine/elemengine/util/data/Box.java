@@ -1,5 +1,7 @@
 package com.elemengine.elemengine.util.data;
 
+import java.util.function.Function;
+
 public class Box<T> {
 
     private T held;
@@ -14,6 +16,10 @@ public class Box<T> {
 
     public void set(T obj) {
         this.held = obj;
+    }
+    
+    public void update(Function<T, T> func) {
+        this.held = func.apply(held);
     }
 
     public static <T> Box<T> of(T obj) {

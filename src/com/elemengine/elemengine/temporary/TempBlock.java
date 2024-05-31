@@ -4,37 +4,23 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.util.Consumer;
 
-import com.elemengine.elemengine.storage.Config;
 import com.google.common.base.Preconditions;
 
 public class TempBlock {
     
-    static long GLOBAL_DURATION = 0;
     static final Map<Block, TempBlock> CACHE = new HashMap<>();
-    static final PriorityQueue<TempBlock> QUEUE = new PriorityQueue<>((a, b) -> {
-        return (int) (a.getCurrentEndtime() - b.getCurrentEndtime());
-    });
-    
-    static {
-        Config config = Config.from("blocks", "temporary");
-        
-        config.addDefault("GlobalDuration", 60000);
-        config.save();
-        
-        GLOBAL_DURATION = config.get(FileConfiguration::getLong, "GlobalDuration");
-    }
+    static final PriorityQueue<TempBlock> QUEUE = new PriorityQueue<>((a, b) -> (int) (a.getCurrentEndtime() - b.getCurrentEndtime()));
 
+    private boolean inQueue = false;
     private Block block;
     private BlockState original;
-    private LinkedList<TempData> stack = new LinkedList<>();
+    private final LinkedList<TempData> stack = new LinkedList<>();
 
     private TempBlock(Block block) {
         this.block = block;
@@ -71,22 +57,18 @@ public class TempBlock {
 
     public TempData setData(BlockData data, long duration, boolean physics, boolean bendable) {
         this.block.setBlockData(data, false);
-        
-        if (GLOBAL_DURATION > 0 && duration <= 0) {
-            duration = GLOBAL_DURATION + ThreadLocalRandom.current().nextLong(2000);
-        }
-
-        if (stack.peek() != null && stack.peek().duration != -1) {
-            QUEUE.remove(this);
-        }
 
         TempData td = new TempData(this, data, duration, physics, bendable);
         this.stack.addFirst(td);
 
-        if (duration != -1) {
+        if (this.inQueue && duration <= 0) {
+            QUEUE.remove(this);
+            this.inQueue = false;
+        } else if (!this.inQueue && duration > 0) {
             QUEUE.add(this);
+            this.inQueue = true;
         }
-
+        
         return td;
     }
 
@@ -99,23 +81,18 @@ public class TempBlock {
     }
 
     public void revertData(TempData data) {
-        if (data == null) {
-            return;
-        } else if (!stack.contains(data)) {
+        if (data == null || !stack.contains(data)) {
             return;
         }
 
         if (stack.peek() == data) {
-            TempData old = stack.poll();
-            if (old.duration != -1) {
-                QUEUE.remove(this);
-            }
-
+            stack.poll();
+            
             TempData td;
             while ((td = stack.peek()) != null) {
                 if (!td.isDone()) {
                     this.block.setBlockData(td.data, false);
-                    if (td.duration != -1) {
+                    if (!this.inQueue && td.duration > 0) {
                         QUEUE.add(this);
                     }
                     break;
@@ -136,10 +113,21 @@ public class TempBlock {
     public void revert() {
         CACHE.remove(this.block);
         QUEUE.remove(this);
+        this.revertNoRemove();
+    }
+    
+    void revertNoRemove() {
         for (TempData td : this.stack) {
             td.onRevert.accept(this);
         }
+        
+        TempData peek = this.stack.peek();
         this.stack.clear();
+        
+        if (peek != null && !peek.data.equals(this.block.getBlockData())) {
+            return;
+        }
+        
         this.block.setBlockData(original.getBlockData());
     }
 

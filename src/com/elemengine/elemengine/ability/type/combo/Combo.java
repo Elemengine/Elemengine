@@ -4,11 +4,10 @@ import java.util.List;
 
 import com.elemengine.elemengine.ability.AbilityInstance;
 import com.elemengine.elemengine.ability.AbilityUser;
-import com.elemengine.elemengine.ability.activation.SequenceInfo;
 
 public interface Combo {
     
-    public AbilityInstance createComboInstance(AbilityUser user);
+    public AbilityInstance<?> createComboInstance(AbilityUser user);
 
     public List<SequenceInfo> getSequence();
 

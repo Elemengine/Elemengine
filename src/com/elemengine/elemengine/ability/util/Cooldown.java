@@ -5,13 +5,16 @@ import java.util.Map;
 import java.util.Optional;
 
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
 
 public final class Cooldown {
 
-    private static Map<String, Tag> CACHE = new HashMap<>();
+    private static final Map<String, Tag> CACHE = new HashMap<>();
 
-    private Tag tag;
-    private long start, duration = 0;
+    private final Tag tag;
+    private final long start;
+    private long duration = 0;
 
     public Cooldown(Tag tag) {
         this.tag = tag;
@@ -47,34 +50,28 @@ public final class Cooldown {
     }
 
     public static Tag tag(String text, ChatColor color, boolean visible) {
-        return tag(text, text, color, visible);
+        return tag(text, new ComponentBuilder(text).color(color).build(), visible);
     }
 
-    public static Tag tag(String internal, String display, ChatColor color, boolean visible) {
+    public static Tag tag(String internal, BaseComponent component, boolean visible) {
         if (CACHE.containsKey(internal)) {
             return CACHE.get(internal);
         }
 
-        if (CACHE.containsKey(display)) {
-            return CACHE.get(display);
-        }
-
-        Tag tag = new Tag(internal, display, color, visible);
+        Tag tag = new Tag(internal, component, visible);
         CACHE.put(internal, tag);
-        CACHE.put(display, tag);
         return tag;
     }
 
     public static class Tag {
 
-        private String internal, display;
-        private ChatColor color;
-        private boolean visible;
+        private final String internal;
+        private final BaseComponent component;
+        private final boolean visible;
 
-        private Tag(String internal, String display, ChatColor color, boolean visible) {
+        private Tag(String internal, BaseComponent component, boolean visible) {
             this.internal = internal;
-            this.display = display;
-            this.color = color;
+            this.component = component;
             this.visible = visible;
         }
 
@@ -82,13 +79,7 @@ public final class Cooldown {
             return internal;
         }
 
-        public String getDisplay() {
-            return display;
-        }
-
-        public ChatColor getColor() {
-            return color;
-        }
+        public BaseComponent getComponent() { return component; }
 
         public boolean isVisible() {
             return visible;

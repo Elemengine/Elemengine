@@ -2,15 +2,18 @@ package com.elemengine.elemengine.command;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.command.CommandSender;
 
-import com.elemengine.elemengine.storage.Configurable;
+import com.elemengine.elemengine.storage.configuration.Configurable;
 
 public abstract class SubCommand implements Configurable {
 
     private String name, description, usage;
     private List<String> aliases;
+    
+    UUID uuid;
 
     public SubCommand(String name, String description, String usage, List<String> aliases) {
         this.name = name.toLowerCase();
@@ -44,24 +47,34 @@ public abstract class SubCommand implements Configurable {
     public String getFileName() {
         return name;
     }
-
+    
     /**
-     * Check if the sender has the given permission
-     * 
-     * @param sender       Who to check for permission
-     * @param afterCommand the part of the permission that will go after
-     *                     <code>projectkorra.command.[command name].</code>
+     * Check if the sender has permission for this command. Permissions
+     * are structured like <code>elemengine.command.[command name]</code>
+     * @param sender Who to check for permission
      * @return true if the sender has permission
      */
-    public final boolean hasPermission(CommandSender sender, String afterCommand) {
-        return sender.hasPermission("elemengine.command." + name + ".");
+    public final boolean hasPermission(CommandSender sender) {
+        return sender.hasPermission("elemengine.command." + name);
+    }
+
+    /**
+     * Check if the sender has permission for this command with an extra
+     * attachment. Permissions are structured like <code>elemengine.command.[command name].[extra]</code>
+     * 
+     * @param sender Who to check for permission
+     * @param extra The extra attachment for the permission
+     * @return true if the sender has permission
+     */
+    public final boolean hasPermission(CommandSender sender, String extra) {
+        return sender.hasPermission("elemengine.command." + name + "." + extra);
     }
 
     /**
      * Execute this command for the given command sender and arguments.
      * 
      * @param sender Who is using the command
-     * @param args   Command arguments after this command name
+     * @param args Command arguments after this command name
      */
     public abstract void execute(CommandSender sender, String[] args);
 

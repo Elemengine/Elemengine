@@ -32,7 +32,7 @@ public final class Entities {
      * @param source      The ability causing the damage
      * @param ignoreArmor Whether to ignore armor stats
      */
-    public static boolean damage(LivingEntity target, double damage, AbilityInstance source, boolean ignoreArmor) {
+    public static boolean damage(LivingEntity target, double damage, AbilityInstance<?> source, boolean ignoreArmor) {
         if (target.getNoDamageTicks() > target.getMaximumNoDamageTicks() / 2.0f && damage <= target.getLastDamage()) {
             return false;
         }
@@ -66,7 +66,7 @@ public final class Entities {
      * @param resetFallDistance Whether the movement should reset fall distance to
      *                          zero
      */
-    public static void move(LivingEntity target, Vector direction, AbilityInstance source, boolean knockback, boolean resetFallDistance) {
+    public static void move(LivingEntity target, Vector direction, AbilityInstance<?> source, boolean knockback, boolean resetFallDistance) {
         InstanceMoveEntityEvent event = Events.call(new InstanceMoveEntityEvent(target, direction, source, knockback, resetFallDistance));
         if (event.isCancelled()) {
             return;
@@ -83,7 +83,7 @@ public final class Entities {
         target.setVelocity(direction);
     }
 
-    public static void ignite(LivingEntity target, int fireTicks, AbilityInstance source) {
+    public static void ignite(LivingEntity target, int fireTicks, AbilityInstance<?> source) {
         InstanceIgniteEntityEvent event = Events.call(new InstanceIgniteEntityEvent(target, fireTicks, source));
 
         if (event.isCancelled()) {
@@ -97,19 +97,19 @@ public final class Entities {
         loc.getWorld().getNearbyEntities(loc, range, range, range, filter).forEach(effect);
     }
 
-    public static void knockback(Entity entity, Vector velocity, AbilityInstance provider) {
+    public static void knockback(Entity entity, Vector velocity, AbilityInstance<?> provider) {
         move(entity, velocity, provider, false, true);
     }
 
-    public static void move(Entity entity, Vector velocity, AbilityInstance provider) {
+    public static void move(Entity entity, Vector velocity, AbilityInstance<?> provider) {
         move(entity, velocity, provider, false, false);
     }
 
-    public static void move(Entity entity, Vector velocity, AbilityInstance provider, boolean lock) {
+    public static void move(Entity entity, Vector velocity, AbilityInstance<?> provider, boolean lock) {
         move(entity, velocity, provider, lock, false);
     }
 
-    public static void move(Entity entity, Vector velocity, AbilityInstance provider, boolean lock, boolean cumulative) {
+    public static void move(Entity entity, Vector velocity, AbilityInstance<?> provider, boolean lock, boolean cumulative) {
         if (entity == null || velocity == null) {
             return;
         } else if (entity.hasMetadata(LOCKED) && !entity.getMetadata(LOCKED).get(0).value().equals(provider)) {

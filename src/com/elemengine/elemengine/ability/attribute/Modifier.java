@@ -10,7 +10,7 @@ public interface Modifier {
 
     /**
      * Takes in a value and does something with it. Since the given value is an
-     * Object, you must check if the value is an <code>instanceof</code> the data
+     * Object, you must check if the value is an instance of the data
      * type you wish to work with, and if the value is not then just return the
      * value unmodified.
      * 

@@ -35,7 +35,7 @@ import com.elemengine.elemengine.event.user.UserBindChangeEvent;
 import com.elemengine.elemengine.event.user.UserBindCopyEvent;
 import com.elemengine.elemengine.event.user.UserCooldownEndEvent;
 import com.elemengine.elemengine.event.user.UserCooldownStartEvent;
-import com.elemengine.elemengine.skill.SkillHolder;
+import com.elemengine.elemengine.element.ElementHolder;
 import com.elemengine.elemengine.util.Events;
 import com.elemengine.elemengine.util.Vectors;
 
@@ -43,19 +43,19 @@ import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.ComponentBuilder.FormatRetention;
 
-public abstract class AbilityUser extends SkillHolder {
+public abstract class AbilityUser extends ElementHolder {
     
     protected final LivingEntity entity;
 
-    private AbilityBinds binds = new AbilityBinds();
-    private Map<String, Cooldown> cooldowns = new HashMap<>();
-    private PriorityQueue<Cooldown> cdQueue = new PriorityQueue<>(12, (a, b) -> (int) (a.getEndTime() - b.getEndTime()));
-    private List<ComboValidator> sequences = new LinkedList<>();
+    private final AbilityBinds binds = new AbilityBinds();
+    private final Map<String, Cooldown> cooldowns = new HashMap<>();
+    private final PriorityQueue<Cooldown> cdQueue = new PriorityQueue<>(12, (a, b) -> (int) (a.getEndTime() - b.getEndTime()));
+    private final List<ComboValidator> sequences = new LinkedList<>();
     private boolean usedActionBar = false;
-    private Stamina stamina;
+    private final Stamina stamina;
     private BigInteger abilityFlags = BigInteger.ZERO;
 
-    Set<AbilityInstance> active = new HashSet<>();
+    Set<AbilityInstance<?>> active = new HashSet<>();
 
     public boolean immune = false;
 
@@ -88,12 +88,12 @@ public abstract class AbilityUser extends SkillHolder {
         return completed;
     }
 
-    public <T extends AbilityInstance> Optional<T> getInstance(Class<T> clazz) {
+    public <T extends AbilityInstance<?>> Optional<T> getInstance(Class<T> clazz) {
         return this.getInstance(clazz, (t) -> true);
     }
 
-    public <T extends AbilityInstance> Optional<T> getInstance(Class<T> clazz, Predicate<T> filter) {
-        for (AbilityInstance inst : active) {
+    public <T extends AbilityInstance<?>> Optional<T> getInstance(Class<T> clazz, Predicate<T> filter) {
+        for (AbilityInstance<?> inst : active) {
             if (!inst.getClass().isAssignableFrom(clazz)) {
                 continue;
             }
@@ -107,14 +107,14 @@ public abstract class AbilityUser extends SkillHolder {
         return Optional.empty();
     }
 
-    public <T extends AbilityInstance> Set<T> getInstances(Class<T> clazz) {
-        return this.getInstances(clazz, (t) -> true);
+    public <T extends AbilityInstance<?>> Set<T> getInstances(Class<T> clazz) {
+        return this.getInstances(clazz, t -> true);
     }
 
-    public <T extends AbilityInstance> Set<T> getInstances(Class<T> clazz, Predicate<T> filter) {
+    public <T extends AbilityInstance<?>> Set<T> getInstances(Class<T> clazz, Predicate<T> filter) {
         Set<T> found = new HashSet<>();
 
-        for (AbilityInstance inst : active) {
+        for (AbilityInstance<?> inst : active) {
             if (!inst.getClass().isAssignableFrom(clazz)) {
                 continue;
             }
@@ -128,7 +128,7 @@ public abstract class AbilityUser extends SkillHolder {
         return found;
     }
 
-    public Set<AbilityInstance> getActive() {
+    public Set<AbilityInstance<?>> getActive() {
         return active;
     }
 
@@ -137,14 +137,14 @@ public abstract class AbilityUser extends SkillHolder {
             return;
         }
 
-        Iterator<AbilityInstance> iter = active.iterator();
-        for (AbilityInstance inst = iter.next(); iter.hasNext(); inst = iter.next()) {
+        Iterator<AbilityInstance<?>> iter = active.iterator();
+        for (AbilityInstance<?> inst = iter.next(); iter.hasNext(); inst = iter.next()) {
             iter.remove();
             Abilities.manager().stopInstance(inst);
         }
     }
 
-    public void stopIfPresent(Class<? extends AbilityInstance> clazz, boolean all) {
+    public void stopIfPresent(Class<? extends AbilityInstance<?>> clazz, boolean all) {
         if (all) {
             this.getInstances(clazz).forEach(Abilities.manager()::stopInstance);
         } else {
@@ -184,7 +184,7 @@ public abstract class AbilityUser extends SkillHolder {
      * Binds the given ability to the specified slot
      * 
      * @param slot    Where to bind the ability on the hotbar, slots range [0, 8]
-     * @param ability {@link Ability} to bind at the slot
+     * @param ability {@link AbilityInfo} to bind at the slot
      * @return false if the slot is out of bounds or the ability is null
      */
     public final boolean bindAbility(int slot, AbilityInfo ability) {
@@ -204,7 +204,7 @@ public abstract class AbilityUser extends SkillHolder {
      * @param abilities Array of abilities to bind
      * @return empty boolean array if given arrays do not match length, otherwise a
      *         boolean array returning the value of
-     *         {@link AbilityUser#bindAbility(int, Ability)} for each pair
+     *         {@link AbilityUser#bindAbility(int, AbilityInfo)} for each pair
      *         <code>slots[i], abilities[i]</code> that is the same length as the
      *         given arrays
      */
@@ -222,7 +222,7 @@ public abstract class AbilityUser extends SkillHolder {
     }
 
     public final boolean canBind(AbilityInfo ability) {
-        return ability instanceof Bindable && hasPermission("bending.ability." + ability.getName()) && this.hasSkill(ability.getSkill());
+        return ability instanceof Bindable && hasPermission("bending.ability." + ability.getName()) && ability.getElementRelation().check(this);
     }
 
     /**
@@ -232,7 +232,7 @@ public abstract class AbilityUser extends SkillHolder {
      * @param slot Where to clear the bind from
      */
     public final void clearBind(int slot) {
-        if (slot < 0 || slot > 8 || binds.get(slot) == null) {
+        if (slot < 0 || slot > 8 || binds.get(slot).isEmpty()) {
             return;
         }
 
@@ -308,7 +308,7 @@ public abstract class AbilityUser extends SkillHolder {
      * Returns a copy of the player's current {@link AbilityBinds}. This is a
      * <b>copy</b> and thus changes to the returned object will not be reflected in
      * the user's binds. See {@link #copyBinds(AbilityBinds)},
-     * {@link #bindAbility(int, Ability)}, and {@link #clearBind(int)} to modify the
+     * {@link #bindAbility(int, AbilityInfo)}, and {@link #clearBind(int)} to modify the
      * user's binds.
      * 
      * @return copy of the player's binds
@@ -361,6 +361,18 @@ public abstract class AbilityUser extends SkillHolder {
         cdQueue.add(cd);
         return true;
     }
+    
+    public final long getCooldownRemaining(AbilityInfo info) {
+        return getCooldownRemaining(info.getCooldownTag());
+    }
+    
+    public final long getCooldownRemaining(Cooldown.Tag tag) {
+        if (!cooldowns.containsKey(tag.getInternal())) {
+            return -1;
+        }
+        
+        return cooldowns.get(tag.getInternal()).getRemaining();
+    }
 
     public final void updateCooldowns() {
         if (entity instanceof Player player) {
@@ -379,7 +391,7 @@ public abstract class AbilityUser extends SkillHolder {
                     actionBar.append(" / ", FormatRetention.NONE);
                 }
 
-                actionBar.append(cd.getTag().getDisplay(), FormatRetention.NONE).strikethrough(true).color(cd.getTag().getColor());
+                actionBar.append(cd.getTag().getComponent(), FormatRetention.NONE).strikethrough(true);
             }
 
             if (i > 0) {
@@ -435,7 +447,7 @@ public abstract class AbilityUser extends SkillHolder {
     }
 
     public Location getTargetLocation(double distance, FluidCollisionMode fluids, boolean ignorePassable, Predicate<Entity> filter) {
-        return rayTrace(distance, fluids, ignorePassable, 1, filter).map((r) -> r.getHitPosition().toLocation(entity.getWorld())).orElseGet(() -> entity.getEyeLocation().add(entity.getLocation().getDirection().multiply(distance)));
+        return rayTrace(distance, fluids, ignorePassable, 0.01, filter).map((r) -> r.getHitPosition().toLocation(entity.getWorld())).orElseGet(() -> entity.getEyeLocation().add(entity.getLocation().getDirection().multiply(distance)));
     }
     
     public Block getTargetBlock(double distance, FluidCollisionMode fluids, boolean ignorePassable) {

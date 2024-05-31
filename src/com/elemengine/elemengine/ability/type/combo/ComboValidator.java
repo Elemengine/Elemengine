@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.ability.activation.SequenceInfo;
 import com.elemengine.elemengine.ability.activation.Trigger;
 
 public class ComboValidator {

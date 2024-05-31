@@ -5,6 +5,6 @@ import com.elemengine.elemengine.ability.AbilityUser;
 
 public interface Passive {
 
-    public AbilityInstance createPassiveInstance(AbilityUser user);
+    public AbilityInstance<?> createPassiveInstance(AbilityUser user);
     
 }

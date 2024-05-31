@@ -1,12 +1,13 @@
 package com.elemengine.elemengine.util;
 
+import java.util.function.Consumer;
+
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Consumer;
 
 import com.elemengine.elemengine.Elemengine;
 import com.google.common.base.Preconditions;

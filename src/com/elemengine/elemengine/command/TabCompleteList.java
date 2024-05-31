@@ -9,7 +9,7 @@ import org.bukkit.Bukkit;
 
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityUser;
-import com.elemengine.elemengine.skill.Skill;
+import com.elemengine.elemengine.element.Element;
 
 public class TabCompleteList {
     
@@ -29,7 +29,7 @@ public class TabCompleteList {
         return Bukkit.getOnlinePlayers().stream().map((p) -> p.getName()).collect(Collectors.toList());
     }
 
-    public static List<String> skills(boolean parentOnly) {
-        return Skill.streamValues().filter((s) -> !parentOnly || !s.getChildren().isEmpty()).map((s) -> s.toString().toLowerCase()).collect(Collectors.toList());
+    public static List<String> elements(boolean parentOnly) {
+        return Element.streamValues().filter((s) -> !parentOnly || !s.getChildren().isEmpty()).map((s) -> s.toString().toLowerCase()).collect(Collectors.toList());
     }
 }

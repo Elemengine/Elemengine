@@ -29,8 +29,7 @@ public enum Trigger {
 
     public boolean matchAny(Trigger... triggers) {
         for (Trigger a : triggers) {
-            if (this == a)
-                return true;
+            if (this == a) return true;
         }
 
         return false;

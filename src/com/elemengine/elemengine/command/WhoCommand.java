@@ -10,8 +10,8 @@ import org.bukkit.entity.Player;
 
 import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.skill.Skill;
-import com.elemengine.elemengine.storage.Config;
+import com.elemengine.elemengine.element.Element;
+import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.user.PlayerUser;
 import com.elemengine.elemengine.user.Users;
 
@@ -53,15 +53,15 @@ public class WhoCommand extends SubCommand {
         List<String> message = new ArrayList<>();
 
         message.add(ChatColor.GOLD + user.getEntity().getName());
-        message.add("Skills: ");
-        for (Skill skill : user.getSkills()) {
-            message.add("- " + skill.getColoredName());
+        message.add("Elements: ");
+        for (Element element : user.getElements()) {
+            message.add("- " + element.getColoredName());
         }
 
         message.add("Binds: ");
         int i = 0;
         for (AbilityInfo ability : user.getBinds()) {
-            message.add((++i) + " - " + (ability == null ? "empty" : ability.getDisplay()));
+            message.add((++i) + " - " + (ability == null ? "empty" : ability.createComponent().toLegacyText()));
         }
 
         sender.sendMessage(message.toArray(new String[0]));

@@ -1,6 +1,8 @@
 package com.elemengine.elemengine.util;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -23,6 +25,40 @@ public final class Blocks {
         double y = a.getY() - b.getY();
         double z = a.getZ() - b.getZ();
         return x * x + y * y + z * z;
+    }
+    
+    private static final BlockFace[] HORIZONTAL_CIRCLE_FACES = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+    private static final int[][] CORNERS = {{0, 0}, {1, 1}, {-1, 0}, {1, -1}};
+    
+    public static void forBlockCircle(Location center, double radius, Consumer<Block> usage) {
+        Queue<Block> searchQueue = new LinkedList<>();
+        searchQueue.add(center.getBlock());
+        boolean empty = false;
+        Location cornerCheck = center.clone();
+        
+        while (!empty) {
+            Block current = searchQueue.poll();
+
+            for (BlockFace face : HORIZONTAL_CIRCLE_FACES) {
+                 Block block = current.getRelative(face);
+                 if (searchQueue.contains(block)) {
+                     continue;
+                 }
+                 
+                 block.getLocation(cornerCheck);
+                 
+                 for (int[] xz : CORNERS) {
+                     cornerCheck.add(xz[0], 0, xz[1]);
+                     if (cornerCheck.distanceSquared(center) <= radius * radius) {
+                         searchQueue.add(block);
+                         break;
+                     }
+                 }
+            }
+
+            usage.accept(current);
+            empty = searchQueue.isEmpty();
+        }
     }
 
     public static void forNearby(Location center, double radius, Consumer<Block> consumer) {

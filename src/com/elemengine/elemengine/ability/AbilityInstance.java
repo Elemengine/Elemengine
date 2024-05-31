@@ -6,12 +6,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.World;
+
 import com.elemengine.elemengine.ability.attribute.Attribute;
 import com.elemengine.elemengine.ability.attribute.AttributeGroup;
 import com.elemengine.elemengine.ability.attribute.Modifier;
 import com.elemengine.elemengine.util.reflect.Fields;
 
-public abstract class AbilityInstance {
+public abstract class AbilityInstance<T extends AbilityInfo> {
 
     // QoL copies of common attributes
     protected static final String SPEED = Attribute.SPEED;
@@ -28,7 +30,7 @@ public abstract class AbilityInstance {
     protected static final String KNOCKUP = Attribute.KNOCKUP;
     protected static final String FIRE_TICK = Attribute.FIRE_TICK;
 
-    static final Map<Class<? extends AbilityInstance>, Map<String, Field>> ATTRIBUTES = new HashMap<>();
+    static final Map<Class<? extends AbilityInstance<?>>, Map<String, Field>> ATTRIBUTES = new HashMap<>();
     
     /**
      * Represents what state the instance exists in. Typically instances will go through
@@ -50,17 +52,19 @@ public abstract class AbilityInstance {
         STOPPING
     }
 
-    protected final AbilityInfo provider;
+    protected final T provider;
     protected final AbilityUser user;
+    protected final World world;
+    private final Map<Field, Modifier> mods = new HashMap<>();
     
     private Phase state = Phase.STARTING;
     private int counter = -1;
     private long startTime = -1;
-    private Map<Field, Modifier> mods = new HashMap<>();
 
-    public AbilityInstance(AbilityInfo provider, AbilityUser user) {
+    public AbilityInstance(T provider, AbilityUser user) {
         this.provider = provider;
         this.user = user;
+        this.world = user.getWorld();
     }
 
     final void start() {
@@ -69,9 +73,7 @@ public abstract class AbilityInstance {
         Iterator<Entry<Field, Modifier>> iter = mods.entrySet().iterator();
         while (iter.hasNext()) {
             Entry<Field, Modifier> entry = iter.next();
-            Fields.getSet(this, entry.getKey(), (value) -> {
-                return entry.getValue().apply(value);
-            });
+            Fields.getSet(this, entry.getKey(), value -> entry.getValue().apply(value));
             iter.remove(); //don't need that anymore
         }
         
@@ -98,7 +100,7 @@ public abstract class AbilityInstance {
         counter = -1;
     }
 
-    public final AbilityInfo getProvider() {
+    public final T getProvider() {
         return provider;
     }
 

@@ -4,13 +4,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
-import com.elemengine.elemengine.storage.Config;
+import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.user.PlayerUser;
 import com.elemengine.elemengine.user.Users;
 
@@ -44,7 +45,7 @@ public class BindCommand extends SubCommand {
             sender.sendMessage(ChatColor.RED + "No ability found from '" + ChatColor.GOLD + args[0] + ChatColor.RED + "'");
             return;
         } else if (!user.canBind(ability.get())) {
-            sender.sendMessage(ChatColor.RED + "Cannot bind the ability. Check if you have the ability's skill and permission node.");
+            sender.sendMessage(ChatColor.RED + "Cannot bind the ability. Check if you have the ability's element and permission node.");
             return;
         }
 
@@ -59,7 +60,12 @@ public class BindCommand extends SubCommand {
         }
 
         user.bindAbility(slot, ability.get());
-        sender.sendMessage(ChatColor.GOLD + "Successfully bound " + ability.get().getDisplay() + ChatColor.GOLD + " to slot " + (slot + 1));
+        sender.spigot().sendMessage(
+            new ComponentBuilder("Successfully bound ").color(ChatColor.GOLD)
+                .append(ability.get().createComponent())
+                .append(" to slot " + (slot + 1)).color(ChatColor.GOLD)
+                .create()
+        );
     }
 
     @Override

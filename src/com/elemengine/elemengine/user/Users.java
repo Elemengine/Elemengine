@@ -1,6 +1,5 @@
 package com.elemengine.elemengine.user;
 
-import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -16,13 +15,20 @@ import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
 import com.elemengine.elemengine.ability.AbilityUser;
+import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.event.user.UserCreationEvent;
-import com.elemengine.elemengine.skill.Skill;
-import com.elemengine.elemengine.storage.DBConnection;
+import com.elemengine.elemengine.storage.database.DBConnection;
 import com.elemengine.elemengine.util.Events;
 
 public class Users extends Manager {
 
+    private static final String 
+        T_PLAYER_READ                   = "SELECT * FROM t_player WHERE uuid = '&1'",
+        T_PLAYER_BINDS_READ             = "SELECT * FROM t_player_binds WHERE uuid = '&1'",
+        T_PLAYER_BINDS_READ_SPECIFIC    = "SELECT * FROM t_player_binds WHERE uuid = '&1' AND bound_slot = &2",
+        T_PLAYER_ELEMENTS_READ          = "SELECT * FROM t_player_elements WHERE uuid = '&1'",
+        T_PLAYER_ELEMENTS_READ_SPECIFIC = "SELECT * FROM t_player_elements WHERE uuid = '&1' AND element_name = '&2'";
+    
     private Map<UUID, AbilityUser> cache = new HashMap<>();
     private long prevTime = System.currentTimeMillis(), autoSave = 1000 * 60 * 60, nextSave = System.currentTimeMillis() + autoSave;
 
@@ -109,31 +115,37 @@ public class Users extends Manager {
         DBConnection db = Elemengine.database();
 
         try {
-            if (db.read("SELECT * FROM t_player WHERE uuid = '" + player.getUniqueId() + "'").next()) {
-                ResultSet skillQuery = db.read("SELECT * FROM t_player_skills WHERE uuid = '" + player.getUniqueId() + "'");
-                while (skillQuery.next()) {
-                    Skill skill;
-                    try {
-                        skill = Skill.valueOf(skillQuery.getString("skill_name").toUpperCase());
-                    } catch (Exception e) {
-                        continue;
-                    }
-
-                    user.addSkill(skill);
-                    if (skillQuery.getInt("toggled") != 0) {
-                        user.toggle(skill);
-                    }
+            db.read(T_PLAYER_READ.replace("&1", player.getUniqueId().toString()), rs -> {
+                if (!rs.next()) {
+                    return;
                 }
+                
+                db.read(T_PLAYER_ELEMENTS_READ.replace("&1", player.getUniqueId().toString()), elementRs -> {
+                    while (elementRs.next()) {
+                        Element element;
+                        try {
+                            element = Element.valueOf(elementRs.getString("element_name").toUpperCase());
+                        } catch (Exception e) {
+                            continue;
+                        }
+    
+                        user.addElement(element);
+                        if (elementRs.getInt("toggled") != 0) {
+                            user.toggle(element);
+                        }
+                    }
+                });
 
-                ResultSet abilityQuery = db.read("SELECT * FROM t_player_binds WHERE uuid = '" + player.getUniqueId() + "'");
-                while (abilityQuery.next()) {
-                    int slot = abilityQuery.getInt("bound_slot");
-
-                    Manager.of(Abilities.class).getInfo(abilityQuery.getString("ability_name")).ifPresent((ability) -> {
-                        user.bindAbility(slot, ability);
-                    });
-                }
-            }
+                db.read(T_PLAYER_BINDS_READ.replace("&1", player.getUniqueId().toString()), abilityRs -> {
+                    while (abilityRs.next()) {
+                        int slot = abilityRs.getInt("bound_slot");
+    
+                        Manager.of(Abilities.class).getInfo(abilityRs.getString("ability_name")).ifPresent((ability) -> {
+                            user.bindAbility(slot, ability);
+                        });
+                    }
+                });
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -151,19 +163,19 @@ public class Users extends Manager {
         DBConnection db = Elemengine.database();
 
         try {
-            if (db.read("SELECT * FROM t_player WHERE uuid = '" + user.getUniqueID() + "'").next()) {
+            if (db.exists(T_PLAYER_READ.replace("&1", user.getUniqueID().toString()))) {
                 // update eventually when t_pk_player has more columns?
             } else {
                 db.send("INSERT INTO t_player VALUES ('" + user.getUniqueID() + "')");
             }
 
-            for (Skill skill : Skill.values()) {
-                if (!user.hasSkill(skill)) {
-                    db.send("DELETE FROM t_player_skills WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.toString() + "'");
-                } else if (db.read("SELECT * FROM t_player_skills WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.toString() + "'").next()) {
-                    db.send("UPDATE t_player_skills SET toggled = " + (user.isToggled(skill) ? 1 : 0) + " WHERE uuid = '" + user.getUniqueID() + "' AND skill_name = '" + skill.toString() + "'");
+            for (Element element : Element.values()) {
+                if (!user.hasElement(element)) {
+                    db.send("DELETE FROM t_player_elements WHERE uuid = '" + user.getUniqueID() + "' AND element_name = '" + element.toString() + "'");
+                } else if (db.exists(T_PLAYER_ELEMENTS_READ_SPECIFIC.replace("&1", user.getUniqueID().toString()).replace("&2", element.toString()))) {
+                    db.send("UPDATE t_player_elements SET toggled = " + (user.isToggled(element) ? 1 : 0) + " WHERE uuid = '" + user.getUniqueID() + "' AND element_name = '" + element.toString() + "'");
                 } else {
-                    db.send("INSERT INTO t_player_skills VALUES ('" + user.getUniqueID() + "', '" + skill.toString() + "', " + (user.isToggled(skill) ? 1 : 0) + ")");
+                    db.send("INSERT INTO t_player_elements VALUES ('" + user.getUniqueID() + "', '" + element.toString() + "', " + (user.isToggled(element) ? 1 : 0) + ")");
                 }
             }
 
@@ -171,7 +183,7 @@ public class Users extends Manager {
             for (AbilityInfo ability : user.getBinds()) {
                 if (ability == null) {
                     db.send("DELETE FROM t_player_binds WHERE uuid = '" + user.getUniqueID() + "' AND bound_slot = " + slot);
-                } else if (db.read("SELECT * FROM t_player_binds WHERE uuid = '" + user.getUniqueID() + "' AND bound_slot = " + slot).next()) {
+                } else if (db.exists(T_PLAYER_BINDS_READ_SPECIFIC.replace("&1", user.getUniqueID().toString()).replace("&2", "" + slot))) {
                     db.send("UPDATE t_player_binds SET ability_name = '" + ability.getName() + "' WHERE uuid = '" + user.getUniqueID() + "' AND bound_slot = " + slot);
                 } else {
                     db.send("INSERT INTO t_player_binds VALUES ('" + user.getUniqueID() + "', " + slot + ", '" + ability.getName() + "')");

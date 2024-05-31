@@ -1,6 +1,10 @@
 package com.elemengine.elemengine.util;
 
 public final class Maths {
+    
+    public static final double TAU = Math.PI * 2.0;
+    public static final double HALF_PI = Math.PI / 2.0;
+    public static final double QUARTER_PI = HALF_PI / 2.0;
 
     private Maths() {}
 
