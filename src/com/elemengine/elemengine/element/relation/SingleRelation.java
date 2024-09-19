@@ -29,4 +29,9 @@ public final class SingleRelation implements ElementRelation {
     public String folderName() {
         return element.getFolderName();
     }
+
+    @Override
+    public int size() {
+        return 1;
+    }
 }

@@ -42,9 +42,11 @@ public final class Collisions extends Manager {
 
     @Override
     protected void tick() {
-        Collider.ACTIVE.forEach(tree::insert);
+        for (Collider collider : Collider.ACTIVE) {
+            tree.insert(collider);
+        }
 
-        Collider.ACTIVE.forEach(collider -> {
+        for (Collider collider : Collider.ACTIVE) {
             seen.add(collider);
 
             tree.queryAnd(collider, other -> treeFilter(collider, other), (tqr) -> {
@@ -62,9 +64,11 @@ public final class Collisions extends Manager {
                 collider.collided(tqr);
                 other.collided(collider, tqr.getCollidingBounds());
             });
-        });
+        }
 
-        removal.forEach(Collider::removal);
+        for (Collider removing : removal) {
+            removing.removal();
+        }
         this.clear();
     }
 

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.elemengine.elemengine.event.element.ElementChangeEvent;
-import com.elemengine.elemengine.util.Events;
+import com.elemengine.elemengine.util.spigot.Events;
 import com.google.common.collect.ImmutableSet;
 
 public abstract class ElementHolder {

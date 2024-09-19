@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util.data;
+package com.elemengine.elemengine.util.math;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;

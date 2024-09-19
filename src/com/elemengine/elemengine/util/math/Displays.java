@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util;
+package com.elemengine.elemengine.util.math;
 
 import java.util.function.Consumer;
 

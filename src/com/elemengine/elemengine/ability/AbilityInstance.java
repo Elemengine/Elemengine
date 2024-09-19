@@ -45,7 +45,7 @@ public abstract class AbilityInstance<T extends AbilityInfo> {
         /**
          * State when the instance is being updated
          */
-        UPDATING, 
+        UPDATING,
         /**
          * State when the instance is being stopped
          */

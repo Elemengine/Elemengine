@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.addon;
+package com.elemengine.elemengine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +56,7 @@ public abstract class Addon implements Listener, Configurable {
         return "addons";
     }
     
+    public abstract String getManagerPath();
     public abstract String getDescription();
     protected abstract void startup();
     protected abstract void cleanup();

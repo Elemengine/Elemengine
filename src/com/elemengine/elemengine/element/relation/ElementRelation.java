@@ -8,6 +8,7 @@ public sealed interface ElementRelation permits MultipleAnyRelation, MultipleExa
     boolean includes(Element element);
     boolean check(ElementHolder holder);
     String folderName();
+    int size();
     
     static ElementRelation single(Element element) {
         return new SingleRelation(element);

@@ -1,15 +1,21 @@
 package com.elemengine.elemengine;
 
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import com.elemengine.elemengine.util.reflect.DynamicLoader;
+import org.bukkit.event.Listener;
+
+import com.elemengine.elemengine.util.reflect.Dynamics;
+import com.elemengine.elemengine.util.spigot.Events;
 import com.google.common.base.Preconditions;
 
 public abstract class Manager {
 
-    private static final PriorityQueue<Manager> ACTIVE = new PriorityQueue<>((a, b) -> a.priority() - b.priority());
+    private static final Comparator<Manager> COMPARE = Comparator.comparingInt(Manager::priority);
+    private static final PriorityQueue<Manager> ACTIVE = new PriorityQueue<>(COMPARE);
     private static final Map<Class<? extends Manager>, Manager> CACHE = new HashMap<>();
 
     /**
@@ -51,6 +57,9 @@ public abstract class Manager {
 
         CACHE.put(manager.getClass(), manager);
         manager.startup();
+        if (manager instanceof Listener listener) {
+            Events.register(listener);
+        }
 
         if (manager.active()) {
             ACTIVE.add(manager);
@@ -75,9 +84,12 @@ public abstract class Manager {
         ACTIVE.clear();
     }
 
-    static void init() {
-        PriorityQueue<Manager> loaded = new PriorityQueue<>((a, b) -> a.priority() - b.priority());
-        DynamicLoader.load(Elemengine.plugin(), "com.elemengine.elemengine", Manager.class, loaded::add);
+    static void init(List<Addon> addons) {
+        PriorityQueue<Manager> loaded = new PriorityQueue<>(COMPARE);
+        Dynamics.load("com.elemengine.elemengine", Manager.class, loaded::add);
+        for (Addon addon : addons) {
+            Dynamics.load(addon.getManagerPath(), addon.getClass().getClassLoader(), Manager.class, loaded::add);
+        }
 
         // need to register them in the proper order for everything to work as expected
         Manager next;

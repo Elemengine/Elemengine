@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util.data;
+package com.elemengine.elemengine.util.math;
 
 public abstract class AngleType {
 

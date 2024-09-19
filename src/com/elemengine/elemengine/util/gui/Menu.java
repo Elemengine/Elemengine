@@ -23,9 +23,9 @@ import org.bukkit.metadata.LazyMetadataValue.CacheStrategy;
 
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.user.PlayerUser;
-import com.elemengine.elemengine.util.Events;
-import com.elemengine.elemengine.util.Items;
-import com.elemengine.elemengine.util.Maths;
+import com.elemengine.elemengine.util.math.Maths;
+import com.elemengine.elemengine.util.spigot.Events;
+import com.elemengine.elemengine.util.spigot.Items;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -318,7 +318,7 @@ public class Menu {
         private void open(Button[] layout) {
             this.refresh(layout);
             viewer.getEntity().openInventory(display);
-            Events.register(this, Elemengine.plugin());
+            Events.register(this);
         }
 
         private void close() {

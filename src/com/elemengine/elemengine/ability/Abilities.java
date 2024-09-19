@@ -12,6 +12,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerAnimationEvent;
+import org.bukkit.event.player.PlayerAnimationType;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.PlayerToggleSprintEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.Manager;
@@ -28,14 +40,17 @@ import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.event.ability.InstanceStartEvent;
 import com.elemengine.elemengine.event.ability.InstanceStopEvent;
 import com.elemengine.elemengine.event.ability.InstanceStopEvent.Reason;
+import com.elemengine.elemengine.event.element.ElementChangeEvent;
 import com.elemengine.elemengine.event.user.UserInputTriggerEvent;
 import com.elemengine.elemengine.storage.configuration.Config;
-import com.elemengine.elemengine.util.Events;
+import com.elemengine.elemengine.user.Users;
 import com.elemengine.elemengine.util.data.Box;
-import com.elemengine.elemengine.util.reflect.DynamicLoader;
+import com.elemengine.elemengine.util.reflect.Dynamics;
+import com.elemengine.elemengine.util.spigot.Events;
+import com.elemengine.elemengine.util.spigot.Threads;
 import com.google.common.base.Preconditions;
 
-public class Abilities extends Manager {
+public class Abilities extends Manager implements Listener {
 
     private final Map<Class<? extends AbilityInfo>, AbilityInfo> cache = new HashMap<>();
     private final Map<String, AbilityInfo> combos = new HashMap<>();
@@ -57,7 +72,7 @@ public class Abilities extends Manager {
     @SuppressWarnings("unchecked")
     @Override
     protected void startup() {
-        DynamicLoader.loadDir(Elemengine.plugin(), Elemengine.getAbilitiesFolder(), true, (c) -> AbilityInfo.class.isAssignableFrom(c) || AbilityInstance.class.isAssignableFrom(c), (clazz) -> {
+        Dynamics.loadDir(Elemengine.getAbilitiesFolder(), Elemengine.class.getClassLoader(), true, (c) -> AbilityInfo.class.isAssignableFrom(c) || AbilityInstance.class.isAssignableFrom(c), (clazz) -> {
             if (AbilityInfo.class.isAssignableFrom(clazz)) {
                 try {
                     Constructor<?> cons = clazz.getDeclaredConstructor();
@@ -130,7 +145,7 @@ public class Abilities extends Manager {
         }
         
         ability.onRegister();
-        Events.register(ability, Elemengine.plugin());
+        Events.register(ability);
         Elemengine.plugin().getLogger().info("Ability registered - " + ability.getName());
     }
     
@@ -247,5 +262,78 @@ public class Abilities extends Manager {
 
     public static Abilities manager() {
         return Manager.of(Abilities.class);
+    }
+    
+    @EventHandler(priority = EventPriority.LOW)
+    private void onInteract(PlayerInteractEvent event) {
+        AbilityUser user = Users.manager().get(event.getPlayer()).get();
+
+        if (user == null || event.getHand() != EquipmentSlot.HAND) {
+            return;
+        } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK && (event.useInteractedBlock() != Event.Result.DENY)) {
+            this.activate(user, Trigger.RIGHT_CLICK_BLOCK, event);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onPlayerSwing(PlayerAnimationEvent event) {
+        AbilityUser user = Users.manager().get(event.getPlayer()).get();
+
+        if (user == null || event.getAnimationType() != PlayerAnimationType.ARM_SWING) {
+            return;
+        }
+
+        this.activate(user, Trigger.LEFT_CLICK, event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onInteractEntity(PlayerInteractAtEntityEvent event) {
+        AbilityUser user = Manager.of(Users.class).get(event.getPlayer()).get();
+
+        if (user == null || event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+
+        this.activate(user, Trigger.RIGHT_CLICK_ENTITY, event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onSneak(PlayerToggleSneakEvent event) {
+        AbilityUser user = Manager.of(Users.class).get(event.getPlayer()).get();
+
+        if (user == null) {
+            return;
+        }
+
+        this.activate(user, event.isSneaking() ? Trigger.SNEAK_DOWN : Trigger.SNEAK_UP, event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onDamage(EntityDamageEvent event) {
+        AbilityUser user = Manager.of(Users.class).get(event.getEntity().getUniqueId()).get();
+
+        if (user == null) {
+            return;
+        }
+
+        this.activate(user, Trigger.DAMAGED, event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onSprint(PlayerToggleSprintEvent event) {
+        AbilityUser user = Manager.of(Users.class).get(event.getPlayer().getUniqueId()).get();
+
+        if (user == null) {
+            return;
+        }
+
+        this.activate(user, event.isSprinting() ? Trigger.SPRINT_ON : Trigger.SPRINT_OFF, event);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onUserElementsChange(ElementChangeEvent event) {
+        if (event.getHolder() instanceof AbilityUser) {
+            Threads.onDelay(() -> ((AbilityUser) event.getHolder()).refresh(), 1);
+        }
     }
 }

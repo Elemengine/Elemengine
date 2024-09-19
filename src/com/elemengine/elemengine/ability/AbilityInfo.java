@@ -96,7 +96,12 @@ public abstract class AbilityInfo implements Configurable, Listener {
 
     @Override
     public String getFolderName() {
-        return "elements/" + relation.folderName();
+        String folder = relation.folderName();
+        if (!folder.startsWith("elements/")) {
+            folder = "elements/" + folder;
+        }
+        
+        return folder;
     }
 
     @Override

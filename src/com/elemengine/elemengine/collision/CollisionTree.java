@@ -11,12 +11,9 @@ import com.elemengine.elemengine.util.data.Pair;
 
 public class CollisionTree {
 
-    private static final int[] XS = { 1, 1, 1, 1, 0, 0, 0, 0
-    };
-    private static final int[] YS = { 1, 1, 0, 0, 1, 1, 0, 0
-    };
-    private static final int[] ZS = { 1, 0, 1, 0, 1, 0, 1, 0
-    };
+    private static final int[] XS = { 1, 1, 1, 1, 0, 0, 0, 0 };
+    private static final int[] YS = { 1, 1, 0, 0, 1, 1, 0, 0 };
+    private static final int[] ZS = { 1, 0, 1, 0, 1, 0, 1, 0 };
 
     private BoundingBox bounds;
     private int capacity;
@@ -34,10 +31,8 @@ public class CollisionTree {
         if (children == null) {
             children = new CollisionTree[8];
             for (int i = 0; i < 8; i++) {
-                double[] min = { bounds.getMinX() + XS[i] * bounds.getWidthX() / 2, bounds.getMinY() + YS[i] * bounds.getHeight() / 2, bounds.getMinZ() + ZS[i] * bounds.getWidthZ() / 2
-                };
-                double[] max = { bounds.getMaxX() - XS[7 - i] * bounds.getWidthX() / 2, bounds.getMaxY() - YS[7 - i] * bounds.getHeight() / 2, bounds.getMaxZ() - ZS[7 - i] * bounds.getWidthZ() / 2
-                };
+                double[] min = { bounds.getMinX() + XS[i] * bounds.getWidthX() / 2, bounds.getMinY() + YS[i] * bounds.getHeight() / 2, bounds.getMinZ() + ZS[i] * bounds.getWidthZ() / 2};
+                double[] max = { bounds.getMaxX() - XS[7 - i] * bounds.getWidthX() / 2, bounds.getMaxY() - YS[7 - i] * bounds.getHeight() / 2, bounds.getMaxZ() - ZS[7 - i] * bounds.getWidthZ() / 2};
                 children[i] = new CollisionTree(new BoundingBox(min[0], min[1], min[2], max[0], max[1], max[2]), capacity);
             }
 

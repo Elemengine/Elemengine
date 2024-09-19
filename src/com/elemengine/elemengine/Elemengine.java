@@ -1,21 +1,33 @@
 package com.elemengine.elemengine;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.logging.Logger;
 
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.elemengine.elemengine.listener.ActivationListener;
-import com.elemengine.elemengine.listener.PlayerListener;
-import com.elemengine.elemengine.listener.TempListener;
+import com.elemengine.elemengine.command.Commands;
+import com.elemengine.elemengine.command.SubCommand;
+import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.storage.database.DBConnection;
 import com.elemengine.elemengine.storage.database.SQLiteDatabase;
+import com.elemengine.elemengine.util.reflect.Dynamics;
+import com.elemengine.elemengine.util.spigot.Events;
+import com.elemengine.elemengine.util.spigot.Threads;
 
 public class Elemengine extends JavaPlugin {
 
     private static final String DB_FILE = "storage.db";
     private static final String ADDONS_FOLDER = "/addons/";
     private static final String ABILITIES_FOLDER = "/abilities/";
-
+    private static final Map<String, Addon> ADDONS = new HashMap<>();
+    
     private DBConnection database;
 
     @Override
@@ -34,21 +46,52 @@ public class Elemengine extends JavaPlugin {
                 else this.getLogger().info("Database setup command #" + (i + 1) + " completed.");
             }
         }).thenRun(() -> {
-            Manager.init();
-            this.setupListeners();
-            this.getServer().getScheduler().scheduleSyncRepeatingTask(this, Manager::update, 0, 1);
+            List<Addon> loaded = new ArrayList<>();
+            Dynamics.loadDir(Elemengine.getAddonsFolder(), true, Addon.class, loaded::add);
+            Manager.init(loaded);
+            
+            for (Addon addon : loaded) {
+                load(addon, true);
+                Elemengine.plugin().getLogger().info("Loaded addon " + addon.getName() + " v" + addon.getVersion() + " by " + addon.getAuthor());
+            }
+            
+            Threads.onTimer(Manager::update, 1, 0);
         }).join();
     }
 
     @Override
     public void onDisable() {
+        for (Addon addon : ADDONS.values()) {
+            addon.cleanup();
+        }
+        ADDONS.clear();
         Manager.onDisable();
+        HandlerList.unregisterAll(this);
     }
-
-    private void setupListeners() {
-        this.getServer().getPluginManager().registerEvents(new ActivationListener(), this);
-        this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-        this.getServer().getPluginManager().registerEvents(new TempListener(), this);
+    
+    private static void load(Addon addon, boolean cache) {
+        if (cache) {
+            ADDONS.put(addon.getInternalName(), addon);
+        }
+        
+        addon.startup();
+        Config.process(addon);
+        Events.register(addon);
+        
+        for (SubCommand cmd : addon.commandRegistrator().get()) {
+            addon.cmdIds.add(Commands.manager().register(cmd));
+        }
+    }
+    
+    public static void reload(Addon addon) {
+        addon.cleanup();
+        Events.unregister(addon);
+        
+        for (UUID uuid : addon.cmdIds) {
+            Commands.manager().unregister(uuid);
+        }
+        
+        Elemengine.load(addon, false);
     }
 
     public DBConnection getDatabase() {
@@ -57,6 +100,10 @@ public class Elemengine extends JavaPlugin {
 
     public static Elemengine plugin() {
         return JavaPlugin.getPlugin(Elemengine.class);
+    }
+    
+    public static Logger logger() {
+        return plugin().getLogger();
     }
 
     public static File getFolder() {
@@ -85,5 +132,13 @@ public class Elemengine extends JavaPlugin {
 
     public static DBConnection database() {
         return plugin().getDatabase();
+    }
+
+    public static Optional<Addon> getAddon(String name) {
+        return Optional.ofNullable(ADDONS.get(name.toLowerCase().replace(' ', '_')));
+    }
+    
+    public static List<Addon> listAddons() {
+        return new ArrayList<>(ADDONS.values());
     }
 }

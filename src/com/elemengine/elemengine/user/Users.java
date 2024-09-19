@@ -9,6 +9,11 @@ import java.util.UUID;
 
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.Manager;
@@ -18,9 +23,9 @@ import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.event.user.UserCreationEvent;
 import com.elemengine.elemengine.storage.database.DBConnection;
-import com.elemengine.elemengine.util.Events;
+import com.elemengine.elemengine.util.spigot.Events;
 
-public class Users extends Manager {
+public class Users extends Manager implements Listener {
 
     private static final String 
         T_PLAYER_READ                   = "SELECT * FROM t_player WHERE uuid = '&1'",
@@ -198,6 +203,31 @@ public class Users extends Manager {
     
     public Set<AbilityUser> registered() {
         return new HashSet<>(cache.values());
+    }
+    
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        this.load(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        playerLeave(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerKick(PlayerKickEvent event) {
+        playerLeave(event.getPlayer());
+    }
+
+    private void playerLeave(Player player) {
+        AbilityUser user = Users.manager().get(player).get();
+        if (user == null) {
+            return;
+        }
+
+        user.stopInstances();
+        this.save(user);
     }
 
     public static Users manager() {

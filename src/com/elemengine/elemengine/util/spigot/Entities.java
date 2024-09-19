@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util;
+package com.elemengine.elemengine.util.spigot;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;

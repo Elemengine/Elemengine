@@ -15,7 +15,7 @@ import com.elemengine.elemengine.ability.AbilityInstance;
 import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.event.stamina.StaminaChangeEvent;
 import com.elemengine.elemengine.storage.configuration.Config;
-import com.elemengine.elemengine.util.Events;
+import com.elemengine.elemengine.util.spigot.Events;
 
 public final class Stamina {
     

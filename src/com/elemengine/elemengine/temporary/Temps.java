@@ -1,8 +1,14 @@
 package com.elemengine.elemengine.temporary;
 
+import java.net.http.WebSocket.Listener;
+
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.block.BlockFromToEvent;
+
 import com.elemengine.elemengine.Manager;
 
-public class Temps extends Manager {
+public class Temps extends Manager implements Listener {
 
     @Override
     protected int priority() {
@@ -39,4 +45,12 @@ public class Temps extends Manager {
         TempBlock.QUEUE.clear();
     }
 
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    private void onFlow(BlockFromToEvent event) {
+        if (!TempBlock.exists(event.getBlock())) {
+            return;
+        }
+
+        event.setCancelled(!TempBlock.of(event.getBlock()).currentlyHasPhysics());
+    }
 }

@@ -21,7 +21,7 @@ import org.bukkit.command.TabCompleter;
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.Manager;
 import com.elemengine.elemengine.storage.configuration.Config;
-import com.elemengine.elemengine.util.reflect.DynamicLoader;
+import com.elemengine.elemengine.util.reflect.Dynamics;
 import com.google.common.base.Preconditions;
 
 import net.md_5.bungee.api.ChatColor;
@@ -47,7 +47,7 @@ public class Commands extends Manager implements CommandExecutor, TabCompleter {
         spigot.setExecutor(this);
         spigot.setTabCompleter(this);
 
-        DynamicLoader.load(Elemengine.plugin(), "com.elemengine.elemengine.command", SubCommand.class, this::register);
+        Dynamics.load("com.elemengine.elemengine.command", SubCommand.class, this::register);
     }
 
     @Override

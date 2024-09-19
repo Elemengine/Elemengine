@@ -38,4 +38,9 @@ public final class MultipleAnyRelation implements ElementRelation {
 
         return false;
     }
+
+    @Override
+    public int size() {
+        return elements.length;
+    }
 }

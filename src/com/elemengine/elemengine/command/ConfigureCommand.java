@@ -11,9 +11,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityUser;
-import com.elemengine.elemengine.addon.Addons;
 import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.storage.configuration.Configurable;
 import com.elemengine.elemengine.user.Users;
@@ -62,9 +62,9 @@ public class ConfigureCommand extends SubCommand {
                 sender.sendMessage(ChatColor.RED + "Unknown ability");
             });
         } else if (type.equalsIgnoreCase("addon")) {
-            Addons.manager().tryFrom(args[OBJ_ARG]).ifPresentOrElse(a -> {
+            Elemengine.getAddon(args[OBJ_ARG]).ifPresentOrElse(a -> {
                 if (modifyField(sender, args, a)) {
-                    Addons.manager().reload(a);
+                    Elemengine.reload(a);
                     sender.sendMessage(ChatColor.GREEN + "Successfully set the value and reloaded the addon.");
                 } else {
                     sender.sendMessage(ChatColor.GREEN + "Successfully set the value. The value will not update in-game until reloaded.");
@@ -91,7 +91,7 @@ public class ConfigureCommand extends SubCommand {
             if (type.equalsIgnoreCase("ability")) {
                 return Abilities.manager().registered().stream().map(a -> a.getName()).collect(Collectors.toList());
             } else if (type.equalsIgnoreCase(type)) {
-                return Addons.manager().list().stream().map(a -> a.getInternalName()).collect(Collectors.toList());
+                return Elemengine.listAddons().stream().map(a -> a.getInternalName()).collect(Collectors.toList());
             }
         }
         
@@ -101,7 +101,7 @@ public class ConfigureCommand extends SubCommand {
                 () -> options.add("ability not found")
             );
         } else if (type.equalsIgnoreCase("addon")) {
-            Addons.manager().tryFrom(args[OBJ_ARG]).ifPresentOrElse(
+            Elemengine.getAddon(args[OBJ_ARG]).ifPresentOrElse(
                 a -> listConfigurableFields(args, options, a),
                 () -> options.add("addon not found")
             );

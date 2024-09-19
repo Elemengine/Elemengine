@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util;
+package com.elemengine.elemengine.util.spigot;
 
 import java.util.function.Consumer;
 
@@ -22,10 +22,17 @@ public final class Events {
         Bukkit.getServer().getPluginManager().callEvent(event);
         return event;
     }
-
-    public static <T extends Listener> T register(T listener, JavaPlugin provider) {
-        Bukkit.getServer().getPluginManager().registerEvents(listener, provider);
-        return listener;
+    
+    public static void register(Listener...listeners) {
+        for (Listener listener : listeners) {
+            Bukkit.getPluginManager().registerEvents(listener, Elemengine.plugin());
+        }
+    }
+    
+    public static void register(JavaPlugin provider, Listener...listeners) {
+        for (Listener listener : listeners) {
+            Bukkit.getPluginManager().registerEvents(listener, provider);
+        }
     }
 
     public static void unregister(Listener listener) {

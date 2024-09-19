@@ -38,7 +38,7 @@ public class EarthElement implements ElementInfo {
             if (mat.isSolid() && !mat.isInteractable() && isEarthen(mat)) bendable.add(mat.toString());
         }
         
-        config.addDefault("earthBlocks", bendable);
+        config.addDefault("bendableBlocks", bendable);
     }
     
     private boolean isEarthen(Material mat) {

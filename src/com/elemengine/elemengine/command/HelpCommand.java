@@ -11,12 +11,12 @@ import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
 
+import com.elemengine.elemengine.Addon;
+import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
 import com.elemengine.elemengine.ability.type.Bindable;
 import com.elemengine.elemengine.ability.type.combo.Combo;
-import com.elemengine.elemengine.addon.Addon;
-import com.elemengine.elemengine.addon.Addons;
 import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.storage.configuration.Configurable;
@@ -276,7 +276,7 @@ public class HelpCommand extends SubCommand {
 
         @Override
         public BaseComponent getSpecific(String arg, CommandSender sender) {
-            Optional<Addon> maybe = Addons.manager().tryFrom(arg);
+            Optional<Addon> maybe = Elemengine.getAddon(arg);
             if (maybe.isEmpty()) {
                 return new ComponentBuilder(unknown).color(ChatColor.RED).build();
             }
@@ -292,7 +292,7 @@ public class HelpCommand extends SubCommand {
 
         @Override
         public List<String> tabItems() {
-            return Addons.manager().list().stream().map(Addon::getInternalName).collect(Collectors.toList());
+            return Elemengine.listAddons().stream().map(Addon::getInternalName).collect(Collectors.toList());
         }
         
     }

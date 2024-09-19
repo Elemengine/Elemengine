@@ -36,8 +36,8 @@ import com.elemengine.elemengine.event.user.UserBindCopyEvent;
 import com.elemengine.elemengine.event.user.UserCooldownEndEvent;
 import com.elemengine.elemengine.event.user.UserCooldownStartEvent;
 import com.elemengine.elemengine.element.ElementHolder;
-import com.elemengine.elemengine.util.Events;
-import com.elemengine.elemengine.util.Vectors;
+import com.elemengine.elemengine.util.math.Vectors;
+import com.elemengine.elemengine.util.spigot.Events;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.ComponentBuilder;

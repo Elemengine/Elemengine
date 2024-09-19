@@ -39,4 +39,9 @@ public final class MultipleExactRelation implements ElementRelation {
 
         return true;
     }
+
+    @Override
+    public int size() {
+        return elements.length;
+    }
 }

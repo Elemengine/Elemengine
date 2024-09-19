@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util;
+package com.elemengine.elemengine.util.spigot;
 
 import java.util.HashSet;
 import java.util.LinkedList;

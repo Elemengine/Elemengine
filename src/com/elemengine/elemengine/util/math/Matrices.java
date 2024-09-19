@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util;
+package com.elemengine.elemengine.util.math;
 
 import org.bukkit.util.Vector;
 import org.joml.Matrix4f;

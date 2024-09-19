@@ -7,7 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
-import com.elemengine.elemengine.util.Items;
+import com.elemengine.elemengine.util.spigot.Items;
 
 import net.md_5.bungee.api.ChatColor;
 

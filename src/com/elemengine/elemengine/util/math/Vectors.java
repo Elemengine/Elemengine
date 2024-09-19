@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util;
+package com.elemengine.elemengine.util.math;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -10,8 +10,6 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.joml.Vector3f;
 
-import com.elemengine.elemengine.util.data.AngleType;
-
 public class Vectors {
 
     public static final ImmutableVector RIGHT = new ImmutableVector(1.0, 0.0, 0.0);
@@ -20,6 +18,8 @@ public class Vectors {
     public static final ImmutableVector LEFT = new ImmutableVector(-1.0, 0.0, 0.0);
     public static final ImmutableVector DOWN = new ImmutableVector(0.0, -1.0, 0.0);
     public static final ImmutableVector BACKWARD = new ImmutableVector(0.0, 0.0, -1.0);
+    
+    public static final double SQUARED_EPSILON = Vector.getEpsilon() * Vector.getEpsilon();
 
     private Vectors() {}
 
@@ -90,6 +90,20 @@ public class Vectors {
     public static float getYaw(Vector vector, AngleType angle) {
         double yaw = (Math.atan2(-vector.getX(), vector.getZ()) + 2 * Math.PI) % (2 * Math.PI);
         return (float) angle.fromRadians(yaw);
+    }
+    
+    /**
+     * Will normalize the vector so long as its squared length is greater than
+     * {@link Vector#getEpsilon()} squared, otherwise returns the unmodified vector.
+     * @param v Vector to normalize
+     * @return normalized vector if possible, always the same vector object
+     */
+    public static Vector normalize(Vector v) {
+        if (v.lengthSquared() > SQUARED_EPSILON) {
+            v.normalize();
+        }
+        
+        return v;
     }
     
     /**

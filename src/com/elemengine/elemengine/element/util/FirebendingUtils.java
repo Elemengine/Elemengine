@@ -9,7 +9,7 @@ import org.joml.Vector3f;
 
 import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.temporary.Molecule;
-import com.elemengine.elemengine.util.Vectors;
+import com.elemengine.elemengine.util.math.Vectors;
 
 public interface FirebendingUtils {
     

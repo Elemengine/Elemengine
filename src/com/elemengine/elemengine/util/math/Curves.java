@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util;
+package com.elemengine.elemengine.util.math;
 
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -67,11 +67,15 @@ public final class Curves {
      */
     public static Vector bezierQuadratic(Location a, Location b, Location c, double t) {
         t = Math.min(1, Math.max(0, t));
-
+    
         double tSquare = t * t;
         double tInvert = (1 - t) * (1 - t);
-
-        return new Vector(b.getX() + tInvert * (a.getX() - b.getX()) + tSquare * (c.getX() - b.getX()), b.getY() + tInvert * (a.getY() - b.getY()) + tSquare * (c.getY() - b.getY()), b.getZ() + tInvert * (a.getZ() - b.getZ()) + tSquare * (c.getZ() - b.getZ()));
+    
+        return new Vector(
+            b.getX() + tInvert * (a.getX() - b.getX()) + tSquare * (c.getX() - b.getX()), 
+            b.getY() + tInvert * (a.getY() - b.getY()) + tSquare * (c.getY() - b.getY()), 
+            b.getZ() + tInvert * (a.getZ() - b.getZ()) + tSquare * (c.getZ() - b.getZ())
+        );
     }
 
     /**

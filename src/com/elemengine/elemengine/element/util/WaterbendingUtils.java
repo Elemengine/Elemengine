@@ -18,8 +18,8 @@ import com.elemengine.elemengine.event.user.UserSupplySourceEvent;
 import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.temporary.Molecule;
-import com.elemengine.elemengine.util.Events;
-import com.elemengine.elemengine.util.Vectors;
+import com.elemengine.elemengine.util.math.Vectors;
+import com.elemengine.elemengine.util.spigot.Events;
 
 public interface WaterbendingUtils {
 
