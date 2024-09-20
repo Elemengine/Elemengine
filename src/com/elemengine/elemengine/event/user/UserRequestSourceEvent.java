@@ -1,5 +1,6 @@
 package com.elemengine.elemengine.event.user;
 
+import org.bukkit.Location;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
@@ -7,45 +8,46 @@ import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.element.Element;
 
 public class UserRequestSourceEvent extends Event {
-
+    
     private static final HandlerList HANDLERS = new HandlerList();
-    
+
     private final AbilityUser user;
-    private final Element element;
+    private final double range;
+    private final boolean[] sourceTypes = new boolean[Element.values().length];
     
-    private int amount;
-    private boolean fulfilled = false;
+    private Location sourceLocation = null;
     
-    public UserRequestSourceEvent(AbilityUser user, Element element, int amount) {
+    public UserRequestSourceEvent(AbilityUser user, double range, Element required, Element...optionals) {
         this.user = user;
-        this.element = element;
-        this.amount = amount;
+        this.range = range;
+        this.sourceTypes[required.ordinal()] = true;
+        for (Element optional : optionals) this.sourceTypes[optional.ordinal()] = true;
     }
     
     public AbilityUser getUser() {
         return user;
     }
     
-    public Element getElement() {
-        return element;
+    public double getRange() {
+        return range;
     }
     
-    public int getAmount() {
-        return amount;
+    public boolean includesSourceType(Element type) {
+        return sourceTypes[type.ordinal()];
     }
     
-    public void setAmount(int amount) {
-        this.amount = amount;
+    public Location getSourceLocation() {
+        return sourceLocation;
     }
     
-    public boolean isFulfilled() {
-        return fulfilled;
+    public boolean hasSourceLocation() {
+        return sourceLocation != null;
     }
     
-    public void setFulfilled(boolean fulfilled) {
-        this.fulfilled = fulfilled;
+    public void setSourceLocation(Location location) {
+        this.sourceLocation = location.clone();
     }
-    
+
     @Override
     public HandlerList getHandlers() {
         return HANDLERS;

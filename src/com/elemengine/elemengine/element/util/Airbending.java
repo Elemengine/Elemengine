@@ -1,5 +1,5 @@
 package com.elemengine.elemengine.element.util;
 
-public interface AirbendingUtils {
+public interface Airbending {
 
 }

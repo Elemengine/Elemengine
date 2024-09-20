@@ -12,16 +12,12 @@ import org.bukkit.entity.Entity;
 import org.joml.Vector3f;
 
 import com.elemengine.elemengine.ability.AbilityUser;
-import com.elemengine.elemengine.event.user.UserCheckSourceEvent;
-import com.elemengine.elemengine.event.user.UserRequestSourceEvent;
-import com.elemengine.elemengine.event.user.UserSupplySourceEvent;
-import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.element.Element;
+import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.temporary.Molecule;
 import com.elemengine.elemengine.util.math.Vectors;
-import com.elemengine.elemengine.util.spigot.Events;
 
-public interface WaterbendingUtils {
+public interface Waterbending {
 
     static final Config WATER_CONFIG = Config.from("_properties", Element.WATER.getFolderName());
     static final Config PLANT_CONFIG = Config.from("_properties", Element.PLANT.getFolderName());
@@ -48,58 +44,46 @@ public interface WaterbendingUtils {
         return molecule;
     }
     
-    default UserRequestSourceEvent requestSource(AbilityUser user, int amount) {
-        return Events.call(new UserRequestSourceEvent(user, Element.WATER, amount));
-    }
-    
-    default UserSupplySourceEvent supplySource(AbilityUser user, int amount) {
-        return Events.call(new UserSupplySourceEvent(user, Element.WATER, amount));
-    }
-    
-    default UserCheckSourceEvent checkSource(AbilityUser user) {
-        return Events.call(new UserCheckSourceEvent(user, Element.WATER));
-    }
-    
-    default boolean canWaterbend(AbilityUser user, Material mat) {
+    static boolean canWaterbend(AbilityUser user, Material mat) {
         return (user.hasElement(Element.WATER) && isWaterbendable(mat))
             || (user.hasElement(Element.PLANT) && isPlantbendable(mat));
     }
     
-    default boolean canWaterbend(AbilityUser user, Block block) {
+    static boolean canWaterbend(AbilityUser user, Block block) {
         return canWaterbend(user, block.getType())
             || (WATER_CONFIG.get(FileConfiguration::getBoolean, "waterlogged") && block.getBlockData() instanceof Waterlogged watered && watered.isWaterlogged());
     }
     
-    default boolean canWaterbend(AbilityUser user, Location loc) {
+    static boolean canWaterbend(AbilityUser user, Location loc) {
         return canWaterbend(user, loc.getBlock().getType());
     }
 
-    default boolean isWaterbendable(Material material) {
+    static boolean isWaterbendable(Material material) {
         return WATER_CONFIG.get(FileConfiguration::getList, "bendables").contains(material.toString());
     }
     
-    default boolean isWaterbendable(Block block) {
+    static boolean isWaterbendable(Block block) {
         return isWaterbendable(block.getType())
             || (WATER_CONFIG.get(FileConfiguration::getBoolean, "waterlogged") && block.getBlockData() instanceof Waterlogged watered && watered.isWaterlogged());
     }
     
-    default boolean isWaterbendable(Location loc) {
+    static boolean isWaterbendable(Location loc) {
         return isWaterbendable(loc.getBlock().getType());
     }
     
-    default boolean isPlantbendable(Material material) {
+    static boolean isPlantbendable(Material material) {
         return PLANT_CONFIG.get(FileConfiguration::getList, "bendables").contains(material.toString());
     }
     
-    default boolean isPlantbendable(Block block) {
+    static boolean isPlantbendable(Block block) {
         return isPlantbendable(block.getType());
     }
     
-    default boolean isPlantbendable(Location loc) {
+    static boolean isPlantbendable(Location loc) {
         return isPlantbendable(loc.getBlock().getType());
     }
     
-    default boolean isBloodbendable(Entity entity) {
+    static boolean isBloodbendable(Entity entity) {
         return !BLOOD_CONFIG.get(FileConfiguration::getList, "entityBlacklist").contains(entity.getType().toString());
     }
 }

@@ -9,59 +9,59 @@ import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.storage.configuration.Config;
 
-public interface EarthbendingUtils {
+public interface Earthbending {
     
-    public static final Config EARTH_CONFIG = Config.from("_properties", Element.EARTH.getFolderName());
-    public static final Config METAL_CONFIG = Config.from("_properties", Element.METAL.getFolderName());
-    public static final Config LAVA_CONFIG = Config.from("_properties", Element.LAVA.getFolderName());
+    static final Config EARTH_CONFIG = Config.from("_properties", Element.EARTH.getFolderName());
+    static final Config METAL_CONFIG = Config.from("_properties", Element.METAL.getFolderName());
+    static final Config LAVA_CONFIG = Config.from("_properties", Element.LAVA.getFolderName());
     
-    public default boolean canEarthbend(AbilityUser user, Material mat) {
+    static boolean canEarthbend(AbilityUser user, Material mat) {
         return (user.hasElement(Element.EARTH) && isEarthbendable(mat))
             || (user.hasElement(Element.METAL) && isMetalbendable(mat))
             || (user.hasElement(Element.LAVA)  && isLavabendable(mat));
     }
     
-    public default boolean canEarthbend(AbilityUser user, Block block) {
+    static boolean canEarthbend(AbilityUser user, Block block) {
         return canEarthbend(user, block.getType());
     }
     
-    public default boolean canEarthbend(AbilityUser user, Location loc) {
+    static boolean canEarthbend(AbilityUser user, Location loc) {
         return canEarthbend(user, loc.getBlock().getType());
     }
 
-    public default boolean isEarthbendable(Material material) {
+    static boolean isEarthbendable(Material material) {
         return EARTH_CONFIG.get(FileConfiguration::getList, "bendableBlocks").contains(material.toString());
     }
     
-    public default boolean isEarthbendable(Block block) {
+    static boolean isEarthbendable(Block block) {
         return isEarthbendable(block.getType());
     }
     
-    public default boolean isEarthbendable(Location loc) {
+    static boolean isEarthbendable(Location loc) {
         return isEarthbendable(loc.getBlock().getType());
     }
     
-    public default boolean isMetalbendable(Material material) {
+    static boolean isMetalbendable(Material material) {
         return METAL_CONFIG.get(FileConfiguration::getList, "bendableBlocks").contains(material.toString());
     }
     
-    public default boolean isMetalbendable(Block block) {
+    static boolean isMetalbendable(Block block) {
         return isMetalbendable(block.getType());
     }
     
-    public default boolean isMetalbendable(Location loc) {
+    static boolean isMetalbendable(Location loc) {
         return isMetalbendable(loc.getBlock().getType());
     }
     
-    public default boolean isLavabendable(Material material) {
+    static boolean isLavabendable(Material material) {
         return LAVA_CONFIG.get(FileConfiguration::getList, "bendableBlocks").contains(material.toString());
     }
     
-    public default boolean isLavabendable(Block block) {
+    static boolean isLavabendable(Block block) {
         return isLavabendable(block.getType());
     }
     
-    public default boolean isLavabendable(Location loc) {
+    static boolean isLavabendable(Location loc) {
         return isLavabendable(loc.getBlock().getType());
     }
 }

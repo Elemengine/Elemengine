@@ -3,6 +3,7 @@ package com.elemengine.elemengine.element.util;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.util.Transformation;
 import org.joml.Vector3f;
@@ -11,7 +12,7 @@ import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.temporary.Molecule;
 import com.elemengine.elemengine.util.math.Vectors;
 
-public interface FirebendingUtils {
+public interface Firebending {
     
     BlockData RED_FIRE = Material.FIRE.createBlockData();
     BlockData BLUE_FIRE = Material.SOUL_FIRE.createBlockData();
@@ -53,5 +54,9 @@ public interface FirebendingUtils {
     
     default BlockData getFlameColor(AbilityUser user) {
         return user.hasPermission("elemengine.fire.blue_flames") ? BLUE_FIRE : RED_FIRE;
+    }
+    
+    default Particle getFlameParticle(AbilityUser user) {
+        return user.hasPermission("elemengine.fire.blue_flames") ? Particle.SOUL_FIRE_FLAME : Particle.FLAME;
     }
 }

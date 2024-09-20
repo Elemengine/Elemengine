@@ -46,6 +46,7 @@ public class Elemengine extends JavaPlugin {
                 else this.getLogger().info("Database setup command #" + (i + 1) + " completed.");
             }
         }).thenRun(() -> {
+            Events.register(new Sourcing());
             List<Addon> loaded = new ArrayList<>();
             Dynamics.loadDir(Elemengine.getAddonsFolder(), true, Addon.class, loaded::add);
             Manager.init(loaded);
