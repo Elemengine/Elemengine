@@ -1,6 +1,7 @@
 package com.elemengine.elemengine;
 
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -25,33 +26,33 @@ public class Sourcing implements Listener {
     
     @EventHandler(priority = EventPriority.LOWEST)
     private void onRequest(UserRequestSourceEvent event) {
-        if (event.hasSourceLocation()) return;
+        if (event.hasSourceSupplier()) return;
         
-        Predicate<Block> valid = b -> false;
+        Predicate<Block> v = b -> false;
         boolean action = false;
         
         if (event.includesSourceType(Element.WATER)) {
-            valid = valid.or(Waterbending::isWaterbendable);
+            v = v.or(Waterbending::isWaterbendable);
             action = true;
         }
         
         if (event.includesSourceType(Element.PLANT)) {
-            valid = valid.or(Waterbending::isPlantbendable);
+            v = v.or(Waterbending::isPlantbendable);
             action = true;
         }
         
         if (event.includesSourceType(Element.EARTH)) {
-            valid = valid.or(Earthbending::isEarthbendable);
+            v = v.or(Earthbending::isEarthbendable);
             action = true;
         }
         
         if (event.includesSourceType(Element.METAL)) {
-            valid = valid.or(Earthbending::isMetalbendable);
+            v = v.or(Earthbending::isMetalbendable);
             action = true;
         }
         
         if (event.includesSourceType(Element.LAVA)) {
-            valid = valid.or(Earthbending::isLavabendable);
+            v = v.or(Earthbending::isLavabendable);
             action = true;
         }
         
@@ -59,12 +60,20 @@ public class Sourcing implements Listener {
         
         Location loc = event.getUser().getEyeLocation();
         Vector dir = loc.getDirection().multiply(0.5);
+        Predicate<Block> valid = v;
         
         for (double d = 0; d < event.getRange(); d += 0.5) {
             RayTraceResult result = Vectors.rayTraceBlocks(loc, d, FluidCollisionMode.ALWAYS, false);
             
             if (result != null && result.getHitBlock() != null && valid.test(result.getHitBlock())) {
-                event.setSourceLocation(result.getHitBlock().getLocation());
+                Block block = result.getHitBlock();
+                event.setSourceSupplier(() -> {
+                    if (valid.test(block)) {
+                        return block.getLocation();
+                    }
+                    
+                    return null;
+                });
                 break;
             }
             
@@ -72,7 +81,7 @@ public class Sourcing implements Listener {
         }
     }
     
-    public static Location request(AbilityUser user, double range, Element first, Element...others) {
-        return Events.call(new UserRequestSourceEvent(user, range, first, others)).getSourceLocation();
+    public static Supplier<Location> request(AbilityUser user, double range, Element first, Element...others) {
+        return Events.call(new UserRequestSourceEvent(user, range, first, others)).getSourceSupplier();
     }
 }

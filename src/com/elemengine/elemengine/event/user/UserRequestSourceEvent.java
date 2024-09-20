@@ -1,5 +1,8 @@
 package com.elemengine.elemengine.event.user;
 
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+
 import org.bukkit.Location;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -15,7 +18,7 @@ public class UserRequestSourceEvent extends Event {
     private final double range;
     private final boolean[] sourceTypes = new boolean[Element.values().length];
     
-    private Location sourceLocation = null;
+    private Supplier<Location> sourceLocation = null;
     
     public UserRequestSourceEvent(AbilityUser user, double range, Element required, Element...optionals) {
         this.user = user;
@@ -36,16 +39,30 @@ public class UserRequestSourceEvent extends Event {
         return sourceTypes[type.ordinal()];
     }
     
-    public Location getSourceLocation() {
+    public Supplier<Location> getSourceSupplier() {
         return sourceLocation;
     }
     
-    public boolean hasSourceLocation() {
+    public boolean hasSourceSupplier() {
         return sourceLocation != null;
     }
     
-    public void setSourceLocation(Location location) {
-        this.sourceLocation = location.clone();
+    public void setSourceSupplier(Location location) {
+        this.sourceLocation = () -> location;
+    }
+    
+    public void setSourceSupplier(Predicate<Location> valid, Location loc) {
+        this.sourceLocation = () -> {
+            if (valid.test(loc)) {
+                return loc;
+            }
+            
+            return null;
+        };
+    }
+    
+    public void setSourceSupplier(Supplier<Location> supplier) {
+        this.sourceLocation = supplier;
     }
 
     @Override
