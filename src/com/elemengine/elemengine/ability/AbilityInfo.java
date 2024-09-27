@@ -31,6 +31,14 @@ public abstract class AbilityInfo implements Configurable, Listener {
         this.version = version;
         this.relation = relation;
     }
+    
+    protected AbilityInfo(String name, String description, String author, String version, Element element) {
+        this.name = name;
+        this.description = description;
+        this.author = author;
+        this.version = version;
+        this.relation = ElementRelation.single(element);
+    }
 
     public BaseComponent createComponent() {
         TextComponent comp = new TextComponent();

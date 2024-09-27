@@ -1,5 +1,6 @@
 package com.elemengine.elemengine.element.util;
 
-public interface Airbending {
+public final class Airbending {
 
+    private Airbending() {}
 }

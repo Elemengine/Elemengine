@@ -12,20 +12,22 @@ import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.temporary.Molecule;
 import com.elemengine.elemengine.util.math.Vectors;
 
-public interface Firebending {
+public final class Firebending {
     
-    BlockData RED_FIRE = Material.FIRE.createBlockData();
-    BlockData BLUE_FIRE = Material.SOUL_FIRE.createBlockData();
+    public static final BlockData RED_FIRE = Material.FIRE.createBlockData();
+    public static final BlockData BLUE_FIRE = Material.SOUL_FIRE.createBlockData();
     
-    default Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset) {
-        return this.spawnFlames(user, amount, x, y, z, offset, null, 0.2f);
+    private Firebending() {}
+    
+    public static Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset) {
+        return spawnFlames(user, amount, x, y, z, offset, null, 0.2f);
     }
     
-    default Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset, Vector3f drift) {
-        return this.spawnFlames(user, amount, x, y, z, offset, drift, 0.2f);
+    public static Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset, Vector3f drift) {
+        return spawnFlames(user, amount, x, y, z, offset, drift, 0.2f);
     }
     
-    default Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset, Vector3f drift, float scaling) {
+    public static Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset, Vector3f drift, float scaling) {
         Molecule molecule = new Molecule(user.getWorld(), x, y, z);
         BlockData color = getFlameColor(user);
         
@@ -36,12 +38,12 @@ public interface Firebending {
             molecule.add(color, scaling, offsets, v);
         }
         
-        molecule.setTransformer(this::transformFlame);
+        molecule.setTransformer(Firebending::transformFlame);
         
         return molecule;
     }
     
-    default boolean transformFlame(Transformation transform) {
+    public static boolean transformFlame(Transformation transform) {
         Vector3f scale = transform.getScale();
         float dx = scale.x * 0.1f;
         float dy = scale.y * 0.1f;
@@ -52,11 +54,11 @@ public interface Firebending {
         return scale.lengthSquared() < 0.000001;
     }
     
-    default BlockData getFlameColor(AbilityUser user) {
+    public static BlockData getFlameColor(AbilityUser user) {
         return user.hasPermission("elemengine.fire.blue_flames") ? BLUE_FIRE : RED_FIRE;
     }
     
-    default Particle getFlameParticle(AbilityUser user) {
+    public static Particle getFlameParticle(AbilityUser user) {
         return user.hasPermission("elemengine.fire.blue_flames") ? Particle.SOUL_FIRE_FLAME : Particle.FLAME;
     }
 }

@@ -88,6 +88,8 @@ public abstract class Manager {
         PriorityQueue<Manager> loaded = new PriorityQueue<>(COMPARE);
         Dynamics.load("com.elemengine.elemengine", Manager.class, loaded::add);
         for (Addon addon : addons) {
+            if (addon.getManagerPath() == null) continue;
+            
             Dynamics.load(addon.getManagerPath(), addon.getClass().getClassLoader(), Manager.class, loaded::add);
         }
 

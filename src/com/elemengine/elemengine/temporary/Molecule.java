@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
@@ -16,6 +17,7 @@ import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -29,6 +31,10 @@ public final class Molecule {
     private Function<Transformation, Boolean> transformer;
     private boolean removeWhenEmpty = true;
     private Entity attached;
+    
+    public Molecule(Location loc) {
+        this(loc.getWorld(), loc.getX(), loc.getY(), loc.getZ());
+    }
     
     public Molecule(World world, double x, double y, double z) {
         this.loc = new Location(world, x, y, z);
@@ -63,9 +69,13 @@ public final class Molecule {
         }
     }
     
+    public void add(Material type, float scale, Vector3f offset, Vector3f drift) {
+        this.add(type.createBlockData(), scale, offset, drift);
+    }
+    
     public void add(BlockData data, float scale, Vector3f offset, Vector3f drift) {
         ACTIVE.add(this);
-        float centering = -scale/2;
+        float centering = -scale/2.0f;
         
         models.put(loc.getWorld().spawn(loc, BlockDisplay.class, display -> {
             if (this.attached != null) {
@@ -76,6 +86,10 @@ public final class Molecule {
             display.setBlock(data);
             display.setBrightness(LIGHT);
         }), drift);
+    }
+    
+    public void move(Vector dv) {
+        this.move(dv.getX(), dv.getY(), dv.getZ());
     }
     
     public void move(double dx, double dy, double dz) {

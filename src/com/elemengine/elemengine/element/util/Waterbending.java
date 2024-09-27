@@ -17,23 +17,25 @@ import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.temporary.Molecule;
 import com.elemengine.elemengine.util.math.Vectors;
 
-public interface Waterbending {
+public final class Waterbending {
 
-    static final Config WATER_CONFIG = Config.from("_properties", Element.WATER.getFolderName());
-    static final Config PLANT_CONFIG = Config.from("_properties", Element.PLANT.getFolderName());
-    static final Config BLOOD_CONFIG = Config.from("_properties", Element.BLOOD.getFolderName());
+    public static final Config WATER_CONFIG = Config.from("_properties", Element.WATER.getFolderName());
+    public static final Config PLANT_CONFIG = Config.from("_properties", Element.PLANT.getFolderName());
+    public static final Config BLOOD_CONFIG = Config.from("_properties", Element.BLOOD.getFolderName());
     
-    static final BlockData FAUX_WATER = Material.BLUE_CONCRETE.createBlockData();
+    public static final BlockData FAUX_WATER = Material.BLUE_ICE.createBlockData();
     
-    default Molecule spawnWater(AbilityUser user, int amount, double x, double y, double z, float offsets) {
+    private Waterbending() {}
+    
+    public static Molecule spawnWater(AbilityUser user, int amount, double x, double y, double z, float offsets) {
         return spawnWater(user, amount, x, y, z, offsets, new Vector3f(), 0.4f);
     }
     
-    default Molecule spawnWater(AbilityUser user, int amount, double x, double y, double z, float offsets, Vector3f drift) {
+    public static Molecule spawnWater(AbilityUser user, int amount, double x, double y, double z, float offsets, Vector3f drift) {
         return spawnWater(user, amount, x, y, z, offsets, drift, 0.4f);
     }
     
-    default Molecule spawnWater(AbilityUser user, int amount, double x, double y, double z, float offsets, Vector3f drift, float scaling) {
+    public static Molecule spawnWater(AbilityUser user, int amount, double x, double y, double z, float offsets, Vector3f drift, float scaling) {
         Molecule molecule = new Molecule(user.getWorld(), x, y, z);
         
         for (int i = 0; i < amount; ++i) {
@@ -44,46 +46,46 @@ public interface Waterbending {
         return molecule;
     }
     
-    static boolean canWaterbend(AbilityUser user, Material mat) {
+    public static boolean canWaterbend(AbilityUser user, Material mat) {
         return (user.hasElement(Element.WATER) && isWaterbendable(mat))
             || (user.hasElement(Element.PLANT) && isPlantbendable(mat));
     }
     
-    static boolean canWaterbend(AbilityUser user, Block block) {
+    public static boolean canWaterbend(AbilityUser user, Block block) {
         return canWaterbend(user, block.getType())
             || (WATER_CONFIG.get(FileConfiguration::getBoolean, "waterlogged") && block.getBlockData() instanceof Waterlogged watered && watered.isWaterlogged());
     }
     
-    static boolean canWaterbend(AbilityUser user, Location loc) {
+    public static boolean canWaterbend(AbilityUser user, Location loc) {
         return canWaterbend(user, loc.getBlock().getType());
     }
 
-    static boolean isWaterbendable(Material material) {
+    public static boolean isWaterbendable(Material material) {
         return WATER_CONFIG.get(FileConfiguration::getList, "bendables").contains(material.toString());
     }
     
-    static boolean isWaterbendable(Block block) {
+    public static boolean isWaterbendable(Block block) {
         return isWaterbendable(block.getType())
             || (WATER_CONFIG.get(FileConfiguration::getBoolean, "waterlogged") && block.getBlockData() instanceof Waterlogged watered && watered.isWaterlogged());
     }
     
-    static boolean isWaterbendable(Location loc) {
+    public static boolean isWaterbendable(Location loc) {
         return isWaterbendable(loc.getBlock().getType());
     }
     
-    static boolean isPlantbendable(Material material) {
+    public static boolean isPlantbendable(Material material) {
         return PLANT_CONFIG.get(FileConfiguration::getList, "bendables").contains(material.toString());
     }
     
-    static boolean isPlantbendable(Block block) {
+    public static boolean isPlantbendable(Block block) {
         return isPlantbendable(block.getType());
     }
     
-    static boolean isPlantbendable(Location loc) {
+    public static boolean isPlantbendable(Location loc) {
         return isPlantbendable(loc.getBlock().getType());
     }
     
-    static boolean isBloodbendable(Entity entity) {
+    public static boolean isBloodbendable(Entity entity) {
         return !BLOOD_CONFIG.get(FileConfiguration::getList, "entityBlacklist").contains(entity.getType().toString());
     }
 }

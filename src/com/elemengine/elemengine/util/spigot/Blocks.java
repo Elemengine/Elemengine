@@ -10,11 +10,22 @@ import java.util.function.Predicate;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
 public final class Blocks {
+    
+    private static final BlockFace[] HORIZONTAL_CIRCLE_FACES = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+    private static final int[][] CORNERS = {{0, 0}, {1, 1}, {-1, 0}, {1, -1}};
 
     private Blocks() {}
+    
+    public static void alongLine(Location start, Vector dir, int length, Consumer<Block> forEach) {
+        BlockIterator iter = new BlockIterator(start.getWorld(), start.toVector(), dir, 0, length);
+        while (iter.hasNext()) {
+            forEach.accept(iter.next());
+        }
+    }
 
     public static double distance(Block a, Block b) {
         return Math.sqrt(distanceSquared(a, b));
@@ -26,9 +37,6 @@ public final class Blocks {
         double z = a.getZ() - b.getZ();
         return x * x + y * y + z * z;
     }
-    
-    private static final BlockFace[] HORIZONTAL_CIRCLE_FACES = {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
-    private static final int[][] CORNERS = {{0, 0}, {1, 1}, {-1, 0}, {1, -1}};
     
     public static void forBlockCircle(Location center, double radius, Consumer<Block> usage) {
         Queue<Block> searchQueue = new LinkedList<>();
