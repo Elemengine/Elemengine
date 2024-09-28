@@ -38,7 +38,7 @@ public final class Blocks {
         return x * x + y * y + z * z;
     }
     
-    public static void forBlockCircle(Location center, double radius, Consumer<Block> usage) {
+    public static void forBlockCircle(Location center, double radius, Consumer<Block> forEach) {
         Queue<Block> searchQueue = new LinkedList<>();
         searchQueue.add(center.getBlock());
         boolean empty = false;
@@ -64,16 +64,16 @@ public final class Blocks {
                  }
             }
 
-            usage.accept(current);
+            forEach.accept(current);
             empty = searchQueue.isEmpty();
         }
     }
 
-    public static void forNearby(Location center, double radius, Consumer<Block> consumer) {
-        forNearby(center.getBlock(), radius, consumer);
+    public static void forNearby(Location center, double radius, Consumer<Block> forEach) {
+        forNearby(center.getBlock(), radius, forEach);
     }
 
-    public static void forNearby(Block center, double radius, Consumer<Block> consumer) {
+    public static void forNearby(Block center, double radius, Consumer<Block> forEach) {
         for (int x = (int) -(radius + 1); x <= radius; ++x) {
             for (int y = (int) -(radius + 1); y <= radius; ++y) {
                 for (int z = (int) -(radius + 1); z <= radius; ++z) {
@@ -82,7 +82,7 @@ public final class Blocks {
                         continue;
                     }
 
-                    consumer.accept(block);
+                    forEach.accept(block);
                 }
             }
         }

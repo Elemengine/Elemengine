@@ -22,6 +22,10 @@ public class Vectors {
     public static final double SQUARED_EPSILON = Vector.getEpsilon() * Vector.getEpsilon();
 
     private Vectors() {}
+    
+    public static Location addTo(Location loc, Vector v, double scale) {
+        return loc.add(scale * v.getX(), scale * v.getY(), scale * v.getZ());
+    }
 
     /**
      * Calculates the vector pointing from the start location to the end location, with length

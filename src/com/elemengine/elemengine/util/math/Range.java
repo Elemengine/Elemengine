@@ -52,13 +52,13 @@ public interface Range<T> {
      */
     public final class Distance implements Range<Location> {
         
-        private final double x, y, z, max;
+        private final double x, y, z, maxSq;
         
         public Distance(Location start, double max) {
             this.x = start.getX();
             this.y = start.getY();
             this.z = start.getZ();
-            this.max = max;
+            this.maxSq = max * max;
         }
 
         @Override
@@ -66,7 +66,7 @@ public interface Range<T> {
             double dx = loc.getX() - x;
             double dy = loc.getY() - y;
             double dz = loc.getZ() - z;
-            return dx * dx + dy * dy + dz * dz < max;
+            return dx * dx + dy * dy + dz * dz < maxSq;
         }
         
     }
