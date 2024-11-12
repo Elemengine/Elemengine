@@ -13,7 +13,7 @@ import com.elemengine.elemengine.ability.attribute.AttributeGroup;
 import com.elemengine.elemengine.ability.attribute.Modifier;
 import com.elemengine.elemengine.util.reflect.Fields;
 
-public abstract class AbilityInstance<T extends AbilityInfo> {
+public abstract class AbilityInstance<T extends AbilityInfo> implements Comparable<AbilityInstance<?>> {
 
     // QoL copies of common attributes
     protected static final String SPEED = Attribute.SPEED;
@@ -50,6 +50,28 @@ public abstract class AbilityInstance<T extends AbilityInfo> {
          * State when the instance is being stopped
          */
         STOPPING
+    }
+    
+    public enum VelocityEffect {
+        /**
+         * Does not affect the velocity of any entity
+         */
+        NONE,
+        
+        /**
+         * Changes the velocity of some entity depending on their current velocity
+         */
+        CHANGER,
+        
+        /**
+         * Sets the velocity of some entity, overriding any current velocity
+         */
+        SET_NONZERO,
+        
+        /**
+         * Sets the velocity of some entity to zero, overriding any current velocity
+         */
+        SET_ZERO
     }
 
     protected final T provider;
@@ -182,6 +204,12 @@ public abstract class AbilityInstance<T extends AbilityInfo> {
     public String getName() {
         return provider.getName();
     }
+    
+    /**
+     * Gets how this instance affects the velocity of some entity
+     * @return
+     */
+    protected abstract VelocityEffect getVelocityEffect();
 
     /**
      * Method called when the instance is started
@@ -203,5 +231,8 @@ public abstract class AbilityInstance<T extends AbilityInfo> {
      */
     protected abstract void onStop();
     
-    
+    @Override
+    public final int compareTo(AbilityInstance<?> othr) {
+        return othr.getVelocityEffect().ordinal() - this.getVelocityEffect().ordinal();
+    }
 }

@@ -45,8 +45,8 @@ public final class Entities {
         damage = event.getDamage();
 
         if (event.doesIgnoreArmor() && damage > 0) {
-            double defense = target.getAttribute(Attribute.GENERIC_ARMOR).getValue();
-            double toughness = target.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS).getValue();
+            double defense = target.getAttribute(Attribute.ARMOR).getValue();
+            double toughness = target.getAttribute(Attribute.ARMOR_TOUGHNESS).getValue();
             damage /= 1 - (Math.min(20, Math.max(defense / 5, defense - 4 * damage / (toughness + 8)))) / 25;
         }
 

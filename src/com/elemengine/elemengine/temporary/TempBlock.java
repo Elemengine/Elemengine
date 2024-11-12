@@ -128,7 +128,7 @@ public class TempBlock {
             return;
         }
         
-        this.block.setBlockData(original.getBlockData());
+        original.update();
     }
 
     public void destroy() {

@@ -104,7 +104,7 @@ public class Vectors {
      */
     public static Vector normalize(Vector v) {
         if (v.lengthSquared() > SQUARED_EPSILON) {
-            v.normalize();
+            return v.normalize();
         }
         
         return v;

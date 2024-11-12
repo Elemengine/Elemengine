@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.bukkit.event.Event;
@@ -57,7 +58,7 @@ public class Abilities extends Manager implements Listener {
     private final ComboTree root = new ComboTree();
 
     private long prevTick = System.currentTimeMillis();
-    private final Set<AbilityInstance<?>> active = new HashSet<>();
+    private final Set<AbilityInstance<?>> active = new TreeSet<>();
 
     @Override
     protected int priority() {

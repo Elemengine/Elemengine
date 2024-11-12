@@ -1,34 +1,39 @@
-package com.elemengine.elemengine.temporary;
+package com.elemengine.elemengine.temporary;    
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+
+import com.elemengine.elemengine.util.spigot.Displays;
 
 public final class Molecule {
     
     private static final Set<Molecule> ACTIVE = new HashSet<>();
     private static final Brightness LIGHT = new BlockDisplay.Brightness(15, 15);
 
-    private final Map<BlockDisplay, Vector3f> models = new HashMap<>();
+    private final Set<Fragment> models = new HashSet<>();
     private final Location loc;
-    private Function<Transformation, Boolean> transformer;
+    private Predicate<Fragment> transformer;
     private boolean removeWhenEmpty = true;
     private Entity attached;
     
@@ -46,7 +51,7 @@ public final class Molecule {
         return loc.clone();
     }
     
-    public void setTransformer(Function<Transformation, Boolean> transformer) {
+    public void setTransformer(Predicate<Fragment> transformer) {
         this.transformer = transformer;
     }
     
@@ -61,57 +66,83 @@ public final class Molecule {
         float dz = (float) (this.loc.getZ() - loc.getZ());
         
         this.attached = vehicle;
-        for (BlockDisplay display : models.keySet()) {
-            vehicle.addPassenger(display);
-            Transformation transform = display.getTransformation();
-            transform.getTranslation().add(dx, dy, dz);
-            display.setTransformation(transform);
+        for (Fragment frag : models) {
+            vehicle.addPassenger(frag.entity);
+            Displays.transform(frag.entity, transform -> transform.getTranslation().add(dx, dy, dz));
         }
     }
     
-    public void add(Material type, float scale, Vector3f offset, Vector3f drift) {
-        this.add(type.createBlockData(), scale, offset, drift);
+    public <T extends Display> void add(Class<T> type, Consumer<T> init, Matrix4f matrix, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
+        ACTIVE.add(this);
+        
+        Display entity = loc.getWorld().spawn(loc, type, e -> {
+            if (this.attached != null) {
+                this.attached.addPassenger(e);
+            }
+            
+            init.accept(e);
+            e.setTransformationMatrix(matrix.translate(offset).scale(scale));
+            e.setTeleportDuration(1);
+            e.setBrightness(LIGHT);
+        });
+        
+        models.add(fragmenter.apply(entity));
+    }
+    
+    public <T extends Display> void add(Class<T> type, Consumer<T> init, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
+        this.add(type, init, new Matrix4f(), scale, offset, fragmenter);
+    }
+    
+    public void add(ItemStack item, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
+        this.add(ItemDisplay.class, e -> {
+            e.setBillboard(Billboard.CENTER);
+            e.setItemStack(item);
+        }, new Matrix4f(), scale, offset, fragmenter);
+    }
+    
+    public void add(BlockData data, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
+        float centering = -scale/2.0f;
+        this.add(BlockDisplay.class, e -> {
+            e.setBlock(data);
+        }, new Matrix4f().translate(centering, centering, centering), scale, offset, fragmenter);
     }
     
     public void add(BlockData data, float scale, Vector3f offset, Vector3f drift) {
-        ACTIVE.add(this);
-        float centering = -scale/2.0f;
-        
-        models.put(loc.getWorld().spawn(loc, BlockDisplay.class, display -> {
-            if (this.attached != null) {
-                this.attached.addPassenger(display);
-            }
-            display.setTeleportDuration(1);
-            display.setTransformationMatrix(new Matrix4f().translate(centering,centering,centering).translate(offset).scale(scale));
-            display.setBlock(data);
-            display.setBrightness(LIGHT);
-        }), drift);
+        this.add(data, scale, offset, d -> new Fragment(d, drift));
+    }
+    
+    public void add(Material type, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
+        this.add(type.createBlockData(), scale, offset, fragmenter);
+    }
+    
+    public void add(Material type, float scale, Vector3f offset, Vector3f drift) {
+        this.add(type, scale, offset, d -> new Fragment(d, drift));
     }
     
     public void move(Vector dv) {
-        this.move(dv.getX(), dv.getY(), dv.getZ());
+        this.move((float) dv.getX(), (float) dv.getY(), (float) dv.getZ());
     }
     
     public void move(double dx, double dy, double dz) {
+        this.move((float) dx, (float) dy, (float) dz);
+    }
+    
+    public void move(float dx, float dy, float dz) {
         if (this.attached != null) {
-            for (BlockDisplay model : models.keySet()) {
-                Transformation transform = model.getTransformation();
-                transform.getTranslation().add((float) dx, (float) dy, (float) dz);
-                model.setTransformation(transform);
-                model.setInterpolationDelay(0);
-                model.setInterpolationDuration(1);
+            for (Fragment frag : models) {
+                Displays.transform(frag.entity, 0, 1, t -> t.getTranslation().add(dx, dy, dz));
             }
         } else {
             loc.add(dx, dy, dz);
-            for (BlockDisplay model : models.keySet()) {
-                model.teleport(loc, TeleportCause.PLUGIN);
+            for (Fragment frag : models) {
+                frag.entity.teleport(loc, TeleportCause.PLUGIN);
             }
         }
     }
     
     public void destroy() {
-        for (BlockDisplay model : models.keySet()) {
-            model.remove();
+        for (Fragment frag : models) {
+            frag.entity.remove();
         }
         models.clear();
         ACTIVE.remove(this);
@@ -122,22 +153,11 @@ public final class Molecule {
             return;
         }
         
-        Iterator<Entry<BlockDisplay, Vector3f>> iter = models.entrySet().iterator();
+        Iterator<Fragment> iter = models.iterator();
         while (iter.hasNext()) {
-            Entry<BlockDisplay, Vector3f> model = iter.next();
-            Transformation transform = model.getKey().getTransformation();
-            if (Boolean.TRUE.equals(transformer.apply(transform))) {
+            if (iter.next().update(transformer)) {
                 iter.remove();
-                model.getKey().remove();
-                continue;
             }
-            
-            transform.getTranslation().add(model.getValue());
-            
-            model.getKey().setTransformation(transform);
-            model.getKey().setInterpolationDelay(0);
-            model.getKey().setInterpolationDuration(1);
-            model.getKey().setTeleportDuration(1);
         }
     }
     
@@ -150,6 +170,36 @@ public final class Molecule {
             if (molecule.removeWhenEmpty && molecule.models.isEmpty()) {
                 iter.remove();
             }
+        }
+    }
+    
+    public static class Fragment {
+        
+        private final Display entity;
+        private final Vector3f drift;
+        
+        protected Fragment(Display entity, Vector3f drift) {
+            this.entity = entity;
+            this.drift = drift;
+        }
+        
+        private boolean update(Predicate<Fragment> transformer) {
+            if (transformer.test(this)) {
+                entity.remove();
+                return false;
+            }
+            
+            Displays.transform(entity, 0, 1, t -> t.getTranslation().add(drift));
+            entity.setTeleportDuration(1);
+            return true;
+        }
+        
+        public Class<? extends Display> getDisplayType() {
+            return entity.getClass();
+        }
+        
+        public Transformation getTransformation() {
+            return entity.getTransformation();
         }
     }
 }
