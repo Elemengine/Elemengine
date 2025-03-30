@@ -78,6 +78,6 @@ public abstract class SubCommand implements Configurable {
      */
     public abstract void execute(CommandSender sender, String[] args);
 
-    public abstract List<String> tabComplete(CommandSender sender, String[] args);
+    public abstract TabComplete tabComplete(CommandSender sender, String[] args);
 
 }

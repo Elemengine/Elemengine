@@ -21,15 +21,15 @@ public class InstanceStopEvent extends Event {
 
     private static final HandlerList HANDLERS = new HandlerList();
 
-    private AbilityInstance<?> instance;
+    private AbilityInstance instance;
     private Reason reason;
 
-    public InstanceStopEvent(AbilityInstance<?> instance, Reason reason) {
+    public InstanceStopEvent(AbilityInstance instance, Reason reason) {
         this.instance = instance;
         this.reason = reason;
     }
 
-    public AbilityInstance<?> getInstance() {
+    public AbilityInstance getInstance() {
         return instance;
     }
 

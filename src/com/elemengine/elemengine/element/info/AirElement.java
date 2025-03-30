@@ -24,7 +24,7 @@ public class AirElement implements ElementInfo {
 
     @Override
     public Material getMaterial() {
-        return Material.YELLOW_CONCRETE;
+        return Material.WIND_CHARGE;
     }
 
     @Override

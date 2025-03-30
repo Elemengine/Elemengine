@@ -4,9 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 
 public final class Cooldown {
 
@@ -49,11 +48,11 @@ public final class Cooldown {
         return Optional.ofNullable(CACHE.get(text));
     }
 
-    public static Tag tag(String text, ChatColor color, boolean visible) {
-        return tag(text, new ComponentBuilder(text).color(color).build(), visible);
+    public static Tag tag(String text, TextColor color, boolean visible) {
+        return tag(text, Component.text(text).color(color), visible);
     }
 
-    public static Tag tag(String internal, BaseComponent component, boolean visible) {
+    public static Tag tag(String internal, Component component, boolean visible) {
         if (CACHE.containsKey(internal)) {
             return CACHE.get(internal);
         }
@@ -66,10 +65,10 @@ public final class Cooldown {
     public static class Tag {
 
         private final String internal;
-        private final BaseComponent component;
+        private final Component component;
         private final boolean visible;
 
-        private Tag(String internal, BaseComponent component, boolean visible) {
+        private Tag(String internal, Component component, boolean visible) {
             this.internal = internal;
             this.component = component;
             this.visible = visible;
@@ -79,7 +78,7 @@ public final class Cooldown {
             return internal;
         }
 
-        public BaseComponent getComponent() { return component; }
+        public Component getComponent() { return component; }
 
         public boolean isVisible() {
             return visible;

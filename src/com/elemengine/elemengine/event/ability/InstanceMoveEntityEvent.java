@@ -16,9 +16,9 @@ public class InstanceMoveEntityEvent extends Event implements Cancellable {
     private LivingEntity target;
     private Vector direction;
     private boolean knockback, resetFallDistance;
-    private AbilityInstance<?> source;
+    private AbilityInstance source;
 
-    public InstanceMoveEntityEvent(LivingEntity target, Vector direction, AbilityInstance<?> source, boolean knockback, boolean resetFallDistance) {
+    public InstanceMoveEntityEvent(LivingEntity target, Vector direction, AbilityInstance source, boolean knockback, boolean resetFallDistance) {
         this.target = target;
         this.direction = direction;
         this.source = source;
@@ -26,7 +26,7 @@ public class InstanceMoveEntityEvent extends Event implements Cancellable {
         this.resetFallDistance = resetFallDistance;
     }
 
-    public AbilityInstance<?> getInstance() {
+    public AbilityInstance getInstance() {
         return source;
     }
 

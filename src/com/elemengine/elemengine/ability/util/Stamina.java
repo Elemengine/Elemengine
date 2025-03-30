@@ -29,8 +29,8 @@ public final class Stamina {
     private AbilityUser user;
     private double current = 1.0, regen;
     private BossBar bar;
-    private Set<AbilityInstance<?>> paused = new HashSet<>();
-    private Set<AbilityInstance<?>> onRemove = new HashSet<>();
+    private Set<AbilityInstance> paused = new HashSet<>();
+    private Set<AbilityInstance> onRemove = new HashSet<>();
 
     public Stamina(AbilityUser user) {
         this.user = user;
@@ -122,9 +122,9 @@ public final class Stamina {
     }
 
     public void regen(double deltaTime) {
-        Iterator<AbilityInstance<?>> iter = onRemove.iterator();
+        Iterator<AbilityInstance> iter = onRemove.iterator();
         while (iter.hasNext()) {
-            AbilityInstance<?> next = iter.next();
+            AbilityInstance next = iter.next();
             if (next.ticksLived() < 0) {
                 iter.remove();
                 paused.remove(next);
@@ -138,18 +138,18 @@ public final class Stamina {
         this.updateBar();
     }
 
-    public void pauseRegen(AbilityInstance<?> instance) {
+    public void pauseRegen(AbilityInstance instance) {
         this.pauseRegen(instance, true);
     }
 
-    public void pauseRegen(AbilityInstance<?> instance, boolean removeUnpauses) {
+    public void pauseRegen(AbilityInstance instance, boolean removeUnpauses) {
         this.paused.add(instance);
         if (removeUnpauses) {
             this.onRemove.add(instance);
         }
     }
 
-    public void unpauseRegen(AbilityInstance<?> instance) {
+    public void unpauseRegen(AbilityInstance instance) {
         this.paused.remove(instance);
         this.onRemove.remove(instance);
     }

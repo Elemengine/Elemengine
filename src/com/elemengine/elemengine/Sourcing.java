@@ -24,7 +24,7 @@ public class Sourcing implements Listener {
     
     Sourcing() {}
     
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.HIGHEST)
     private void onRequest(UserRequestSourceEvent event) {
         if (event.hasSourceSupplier()) return;
         

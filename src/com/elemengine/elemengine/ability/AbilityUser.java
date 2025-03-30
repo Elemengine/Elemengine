@@ -19,7 +19,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
@@ -31,17 +30,14 @@ import com.elemengine.elemengine.ability.type.combo.ComboValidator;
 import com.elemengine.elemengine.ability.util.AbilityBinds;
 import com.elemengine.elemengine.ability.util.Cooldown;
 import com.elemengine.elemengine.ability.util.Stamina;
+import com.elemengine.elemengine.element.ElementHolder;
 import com.elemengine.elemengine.event.user.UserBindChangeEvent;
 import com.elemengine.elemengine.event.user.UserBindCopyEvent;
+import com.elemengine.elemengine.event.user.UserCanUseAbilityEvent;
 import com.elemengine.elemengine.event.user.UserCooldownEndEvent;
 import com.elemengine.elemengine.event.user.UserCooldownStartEvent;
-import com.elemengine.elemengine.element.ElementHolder;
 import com.elemengine.elemengine.util.math.Vectors;
 import com.elemengine.elemengine.util.spigot.Events;
-
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.ComponentBuilder.FormatRetention;
 
 public abstract class AbilityUser extends ElementHolder {
     
@@ -51,11 +47,10 @@ public abstract class AbilityUser extends ElementHolder {
     private final Map<String, Cooldown> cooldowns = new HashMap<>();
     private final PriorityQueue<Cooldown> cdQueue = new PriorityQueue<>(12, (a, b) -> (int) (a.getEndTime() - b.getEndTime()));
     private final List<ComboValidator> sequences = new LinkedList<>();
-    private boolean usedActionBar = false;
     private final Stamina stamina;
     private BigInteger abilityFlags = BigInteger.ZERO;
 
-    Set<AbilityInstance<?>> active = new HashSet<>();
+    Set<AbilityInstance> active = new HashSet<>();
 
     public boolean immune = false;
 
@@ -88,12 +83,12 @@ public abstract class AbilityUser extends ElementHolder {
         return completed;
     }
 
-    public <T extends AbilityInstance<?>> Optional<T> getInstance(Class<T> clazz) {
+    public <T extends AbilityInstance> Optional<T> getInstance(Class<T> clazz) {
         return this.getInstance(clazz, (t) -> true);
     }
 
-    public <T extends AbilityInstance<?>> Optional<T> getInstance(Class<T> clazz, Predicate<T> filter) {
-        for (AbilityInstance<?> inst : active) {
+    public <T extends AbilityInstance> Optional<T> getInstance(Class<T> clazz, Predicate<T> filter) {
+        for (AbilityInstance inst : active) {
             if (!inst.getClass().isAssignableFrom(clazz)) {
                 continue;
             }
@@ -107,14 +102,14 @@ public abstract class AbilityUser extends ElementHolder {
         return Optional.empty();
     }
 
-    public <T extends AbilityInstance<?>> Set<T> getInstances(Class<T> clazz) {
+    public <T extends AbilityInstance> Set<T> getInstances(Class<T> clazz) {
         return this.getInstances(clazz, t -> true);
     }
 
-    public <T extends AbilityInstance<?>> Set<T> getInstances(Class<T> clazz, Predicate<T> filter) {
+    public <T extends AbilityInstance> Set<T> getInstances(Class<T> clazz, Predicate<T> filter) {
         Set<T> found = new HashSet<>();
 
-        for (AbilityInstance<?> inst : active) {
+        for (AbilityInstance inst : active) {
             if (!inst.getClass().isAssignableFrom(clazz)) {
                 continue;
             }
@@ -128,7 +123,7 @@ public abstract class AbilityUser extends ElementHolder {
         return found;
     }
 
-    public Set<AbilityInstance<?>> getActive() {
+    public Set<AbilityInstance> getActive() {
         return active;
     }
 
@@ -137,14 +132,14 @@ public abstract class AbilityUser extends ElementHolder {
             return;
         }
 
-        Iterator<AbilityInstance<?>> iter = active.iterator();
-        for (AbilityInstance<?> inst = iter.next(); iter.hasNext(); inst = iter.next()) {
+        Iterator<AbilityInstance> iter = active.iterator();
+        for (AbilityInstance inst = iter.next(); iter.hasNext(); inst = iter.next()) {
             iter.remove();
             Abilities.manager().stopInstance(inst);
         }
     }
 
-    public void stopIfPresent(Class<? extends AbilityInstance<?>> clazz, boolean all) {
+    public void stopIfPresent(Class<? extends AbilityInstance> clazz, boolean all) {
         if (all) {
             this.getInstances(clazz).forEach(Abilities.manager()::stopInstance);
         } else {
@@ -223,6 +218,10 @@ public abstract class AbilityUser extends ElementHolder {
 
     public final boolean canBind(AbilityInfo ability) {
         return ability instanceof Bindable && hasPermission("bending.ability." + ability.getName()) && ability.getElementRelation().check(this);
+    }
+    
+    public final boolean canBend(AbilityInfo ability) {
+        return !Events.call(new UserCanUseAbilityEvent(this, ability)).isCancelled();
     }
 
     /**
@@ -375,38 +374,6 @@ public abstract class AbilityUser extends ElementHolder {
     }
 
     public final void updateCooldowns() {
-        if (entity instanceof Player player) {
-            ComponentBuilder actionBar = new ComponentBuilder();
-            int i = 0;
-            for (Cooldown cd : cdQueue) {
-                if (Abilities.manager().getInfo(cd.getTag().getInternal()).isPresent()) {
-                    continue;
-                }
-
-                if (++i > 3) {
-                    break;
-                }
-
-                if (i > 1) {
-                    actionBar.append(" / ", FormatRetention.NONE);
-                }
-
-                actionBar.append(cd.getTag().getComponent(), FormatRetention.NONE).strikethrough(true);
-            }
-
-            if (i > 0) {
-                if (i > 3) {
-                    actionBar.append(" ...", FormatRetention.NONE);
-                }
-
-                usedActionBar = true;
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, actionBar.create());
-            } else if (usedActionBar) {
-                usedActionBar = false;
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, actionBar.create());
-            }
-        }
-
         while (cdQueue.peek() != null) {
             if (cdQueue.peek().getRemaining() >= 0) {
                 break;

@@ -1,5 +1,6 @@
 package com.elemengine.elemengine.command;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -138,7 +139,7 @@ public class Commands extends Manager implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        cmd.execute(sender, Arrays.copyOfRange(args, 1, args.length));
+        cmd.execute(sender, parseArgs(Arrays.copyOfRange(args, 1, args.length)));
         return true;
     }
 
@@ -157,15 +158,44 @@ public class Commands extends Manager implements CommandExecutor, TabCompleter {
         if (cmd == null) {
             return null;
         }
-
-        List<String> list = cmd.tabComplete(sender, Arrays.copyOfRange(args, 1, args.length));
-        filter(list, args[args.length - 1]);
         
-        if (list == null || list.isEmpty()) {
-            list = Arrays.asList("Unexpected argument at index " + (args.length - 1) + ": '" + args[args.length - 1] + "'");
+        String[] subArgs = parseArgs(Arrays.copyOfRange(args, 1, args.length));
+
+        TabComplete completed = cmd.tabComplete(sender, subArgs);
+        List<String> list = completed.inner();
+        if (completed.shouldFilter()) {
+            filter(list, subArgs[subArgs.length - 1]);
+        }
+        
+        if (list == null || (completed.errorWhenEmpty() && list.isEmpty())) {
+            list = Arrays.asList("Unexpected argument at index " + (subArgs.length - 1) + ": '" + subArgs[subArgs.length - 1] + "'");
         }
 
         return list;
+    }
+    
+    private String[] parseArgs(String[] args) {
+        List<String> subArgs = new ArrayList<>();
+        String currArg = "";
+        for (String arg : args) {
+            if (!currArg.isEmpty()) {
+                currArg += " " + arg;
+                if (arg.endsWith("\"")) {
+                    subArgs.add(currArg.substring(0, currArg.length() - 1));
+                    currArg = "";
+                }
+            } else if (arg.startsWith("\"") && arg.length() > 0) {
+                currArg += arg.substring(1);
+            } else {
+                subArgs.add(arg);
+            }
+        }
+        
+        if (!currArg.isEmpty()) {
+            subArgs.add(currArg);
+        }
+        
+        return subArgs.toArray(String[]::new);
     }
 
     public static Commands manager() {

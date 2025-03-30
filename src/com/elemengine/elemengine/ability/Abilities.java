@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.bukkit.event.Event;
@@ -58,8 +57,8 @@ public class Abilities extends Manager implements Listener {
     private final ComboTree root = new ComboTree();
 
     private long prevTick = System.currentTimeMillis();
-    private final Set<AbilityInstance<?>> active = new TreeSet<>();
-
+    private final Set<AbilityInstance> active = new HashSet<>();
+    
     @Override
     protected int priority() {
         return 30;
@@ -87,22 +86,24 @@ public class Abilities extends Manager implements Listener {
 
                 for (Field field : clazz.getDeclaredFields()) {
                     if (field.isAnnotationPresent(Attribute.class)) {
-                        attributes.put(field.getAnnotation(Attribute.class).value().toLowerCase(), field);
+                        Attribute attr = field.getAnnotation(Attribute.class);
+                        
+                        attributes.put(attr.value().isBlank() ? field.getName() : attr.value().toLowerCase(), field);
                     }
                 }
 
-                AbilityInstance.ATTRIBUTES.put((Class<? extends AbilityInstance<?>>) clazz, attributes);
+                AbilityInstance.ATTRIBUTE_FIELDS.put((Class<? extends AbilityInstance>) clazz, attributes);
             }
         });
     }
 
     @Override
     protected void tick() {
-        Iterator<AbilityInstance<?>> iter = active.iterator();
+        Iterator<AbilityInstance> iter = active.iterator();
         double deltaTime = (System.currentTimeMillis() - prevTick) / 1000D;
 
         while (iter.hasNext()) {
-            AbilityInstance<?> inst = iter.next();
+            AbilityInstance inst = iter.next();
 
             switch (inst.getPhase()) {
                 case UPDATING:
@@ -173,7 +174,7 @@ public class Abilities extends Manager implements Listener {
             return Optional.empty();
         }
 
-        return cache.values().stream().filter(a -> a.getName().equalsIgnoreCase(name)).findFirst();
+        return cache.values().stream().filter(a -> a.getName().equalsIgnoreCase(name.replace("_", " "))).findFirst();
     }
 
     public Set<AbilityInfo> fromElement(Element element) {
@@ -195,7 +196,7 @@ public class Abilities extends Manager implements Listener {
             return false;
         }
         
-        AbilityInstance<?> instance = null;
+        AbilityInstance instance = null;
 
         if (trigger.canCombo()) {
             ComboValidator combo = user.updateCombos(ability, trigger, root);
@@ -212,7 +213,7 @@ public class Abilities extends Manager implements Listener {
         return this.startInstance(instance);
     }
 
-    public boolean startInstance(AbilityInstance<?> instance) {
+    public boolean startInstance(AbilityInstance instance) {
         if (instance == null || instance.getUser() == null || active.contains(instance)) {
             return false;
         } else if (Events.call(new InstanceStartEvent(instance)).isCancelled()) {
@@ -232,7 +233,7 @@ public class Abilities extends Manager implements Listener {
         return true;
     }
 
-    public void stopInstance(AbilityInstance<?> instance) {
+    public void stopInstance(AbilityInstance instance) {
         if (instance == null) {
             return;
         }
@@ -240,7 +241,7 @@ public class Abilities extends Manager implements Listener {
         this.stop(instance, Reason.FORCED);
     }
 
-    private void stop(AbilityInstance<?> instance, Reason reason) {
+    private void stop(AbilityInstance instance, Reason reason) {
         Events.call(new InstanceStopEvent(instance, reason));
         instance.stop();
     }

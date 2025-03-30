@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,7 +12,6 @@ import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
-import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
@@ -26,6 +24,8 @@ import org.joml.Vector3f;
 
 import com.elemengine.elemengine.util.spigot.Displays;
 
+import io.papermc.paper.entity.TeleportFlag;
+
 public final class Molecule {
     
     private static final Set<Molecule> ACTIVE = new HashSet<>();
@@ -33,7 +33,6 @@ public final class Molecule {
 
     private final Set<Fragment> models = new HashSet<>();
     private final Location loc;
-    private Predicate<Fragment> transformer;
     private boolean removeWhenEmpty = true;
     private Entity attached;
     
@@ -43,7 +42,6 @@ public final class Molecule {
     
     public Molecule(World world, double x, double y, double z) {
         this.loc = new Location(world, x, y, z);
-        this.transformer = null;
         ACTIVE.add(this);
     }
     
@@ -51,8 +49,12 @@ public final class Molecule {
         return loc.clone();
     }
     
-    public void setTransformer(Predicate<Fragment> transformer) {
-        this.transformer = transformer;
+    public Vector3f getOffset(Location to) {
+        return new Vector3f(
+                (float) (to.getX() - loc.getX()), 
+                (float) (to.getY() - loc.getY()), 
+                (float) (to.getZ() - loc.getZ())
+        );
     }
     
     public void setRemoveWhenEmpty(boolean removeWhenEmpty) {
@@ -74,18 +76,23 @@ public final class Molecule {
     
     public <T extends Display> void add(Class<T> type, Consumer<T> init, Matrix4f matrix, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
         ACTIVE.add(this);
+        if (offset == null) {
+            offset = new Vector3f();
+        }
+        Vector3f offsets = offset;
         
-        Display entity = loc.getWorld().spawn(loc, type, e -> {
+        Display entity = loc.getWorld().spawn(loc.add(offsets.x, offsets.y, offsets.z), type, e -> {
             if (this.attached != null) {
                 this.attached.addPassenger(e);
             }
             
             init.accept(e);
-            e.setTransformationMatrix(matrix.translate(offset).scale(scale));
+            e.setTransformationMatrix(matrix.scale(scale));
             e.setTeleportDuration(1);
             e.setBrightness(LIGHT);
         });
         
+        loc.subtract(offsets.x, offsets.y, offsets.z);
         models.add(fragmenter.apply(entity));
     }
     
@@ -95,9 +102,12 @@ public final class Molecule {
     
     public void add(ItemStack item, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
         this.add(ItemDisplay.class, e -> {
-            e.setBillboard(Billboard.CENTER);
             e.setItemStack(item);
         }, new Matrix4f(), scale, offset, fragmenter);
+    }
+    
+    public void add(ItemStack item, float scale, Vector3f offset, Vector3f drift) {
+        this.add(item, scale, offset, d -> new Fragment(d, drift));
     }
     
     public void add(BlockData data, float scale, Vector3f offset, Function<Display, Fragment> fragmenter) {
@@ -135,7 +145,7 @@ public final class Molecule {
         } else {
             loc.add(dx, dy, dz);
             for (Fragment frag : models) {
-                frag.entity.teleport(loc, TeleportCause.PLUGIN);
+                frag.entity.teleport(frag.entity.getLocation().add(dx, dy, dz), TeleportCause.PLUGIN);
             }
         }
     }
@@ -149,13 +159,9 @@ public final class Molecule {
     }
     
     private void update() {
-        if (transformer == null) {
-            return;
-        }
-        
         Iterator<Fragment> iter = models.iterator();
         while (iter.hasNext()) {
-            if (iter.next().update(transformer)) {
+            if (!iter.next().update()) {
                 iter.remove();
             }
         }
@@ -178,28 +184,77 @@ public final class Molecule {
         private final Display entity;
         private final Vector3f drift;
         
-        protected Fragment(Display entity, Vector3f drift) {
+        public Fragment(Display entity, Vector3f drift) {
             this.entity = entity;
-            this.drift = drift;
+            this.drift = drift == null ? new Vector3f() : drift;
         }
         
-        private boolean update(Predicate<Fragment> transformer) {
-            if (transformer.test(this)) {
+        protected Transformation generateTransform() {
+            return entity.getTransformation();
+        }
+        
+        private final boolean update() {
+            Transformation transform = this.generateTransform();
+            if (transform == null) {
                 entity.remove();
                 return false;
             }
             
-            Displays.transform(entity, 0, 1, t -> t.getTranslation().add(drift));
+            entity.teleport(entity.getLocation().add(drift.x, drift.y, drift.z), TeleportCause.PLUGIN);
+            entity.setTransformation(transform);
+            entity.setInterpolationDelay(0);
+            entity.setInterpolationDuration(1);
             entity.setTeleportDuration(1);
             return true;
         }
         
-        public Class<? extends Display> getDisplayType() {
+        public final Class<? extends Display> getDisplayType() {
             return entity.getClass();
         }
         
-        public Transformation getTransformation() {
-            return entity.getTransformation();
+        public final boolean isDisplayType(Class<? extends Display> clazz) {
+            return clazz.isAssignableFrom(entity.getClass());
+        }
+        
+        public final <T extends Display> void updateDisplay(Class<T> type, Consumer<T> update) {
+            if (!this.isDisplayType(type)) {
+                return;
+            }
+            
+            update.accept(type.cast(entity));
+        }
+    }
+    
+    public static class ShrinkingFragment extends Fragment {
+
+        private final float shrinkPercent, threshold;
+        
+        public ShrinkingFragment(Display entity, Vector3f drift, float shrinkPercent) {
+            this(entity, drift, shrinkPercent, 0.00001f);
+        }
+        
+        public ShrinkingFragment(Display entity, Vector3f drift, float shrinkPercent, float threshold) {
+            super(entity, drift);
+            this.shrinkPercent = shrinkPercent;
+            this.threshold = threshold;
+        }
+        
+        @Override
+        protected Transformation generateTransform() {
+            Transformation transform = super.generateTransform();
+            Vector3f scale = transform.getScale();
+            float diff = (1f - shrinkPercent) / 2f;
+            
+            if (this.isDisplayType(BlockDisplay.class)) {
+                transform.getTranslation().add(scale.x * diff, scale.y * diff, scale.z * diff);
+            }
+            
+            scale.mul(shrinkPercent);
+            if (scale.lengthSquared() < threshold) {
+                return null;
+            }
+            
+            return transform;
         }
     }
 }

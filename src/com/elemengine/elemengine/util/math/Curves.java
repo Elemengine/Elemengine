@@ -2,6 +2,7 @@ package com.elemengine.elemengine.util.math;
 
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
 import com.google.common.base.Preconditions;
 
@@ -75,6 +76,19 @@ public final class Curves {
             b.getX() + tInvert * (a.getX() - b.getX()) + tSquare * (c.getX() - b.getX()), 
             b.getY() + tInvert * (a.getY() - b.getY()) + tSquare * (c.getY() - b.getY()), 
             b.getZ() + tInvert * (a.getZ() - b.getZ()) + tSquare * (c.getZ() - b.getZ())
+        );
+    }
+    
+    public static Vector3f bezierQuadratic3f(Location a, Location b, Location c, double t) {
+        t = Math.min(1, Math.max(0, t));
+        
+        double tSquare = t * t;
+        double tInvert = (1 - t) * (1 - t);
+    
+        return new Vector3f(
+            (float) (b.getX() + tInvert * (a.getX() - b.getX()) + tSquare * (c.getX() - b.getX())), 
+            (float) (b.getY() + tInvert * (a.getY() - b.getY()) + tSquare * (c.getY() - b.getY())), 
+            (float) (b.getZ() + tInvert * (a.getZ() - b.getZ()) + tSquare * (c.getZ() - b.getZ()))
         );
     }
 

@@ -27,11 +27,15 @@ public class EarthElement implements ElementInfo {
 
     @Override
     public Material getMaterial() {
-        return Material.LIME_CONCRETE;
+        return Material.GRASS_BLOCK;
     }
 
     @Override
     public void setupConfig(Config config) {
+        if (config.contains("bendableBlocks")) {
+            return;
+        }
+        
         List<String> bendable = new ArrayList<>();
         
         for (Material mat : Material.values()) {
@@ -56,6 +60,6 @@ public class EarthElement implements ElementInfo {
             || mat.toString().contains("CLAY")       || mat.toString().contains("CALCITE")
             || mat.toString().contains("TUFF")       || mat.toString().contains("LIUM")
             || mat.toString().contains("OBSIDIAN")   || mat.toString().contains("SOIL")
-            || mat == Material.PODZOL || mat == Material.FARMLAND;
+            || mat == Material.PODZOL || mat == Material.FARMLAND || mat == Material.GRASS_BLOCK;
     }
 }

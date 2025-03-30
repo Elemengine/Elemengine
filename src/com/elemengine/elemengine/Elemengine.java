@@ -40,12 +40,7 @@ public class Elemengine extends JavaPlugin {
             "CREATE TABLE IF NOT EXISTS t_player_binds (uuid TEXT, bound_slot NUMBER, ability_name TEXT, PRIMARY KEY (uuid, bound_slot))",
             "CREATE TABLE IF NOT EXISTS t_ability_ids (id INTEGER, ability_name TEXT, PRIMARY KEY (id, ability_name))",
             "CREATE TABLE IF NOT EXISTS t_player_abilities (uuid TEXT, ability_id INTEGER, PRIMARY KEY (uuid, ability_id))"
-        ).thenAccept(ints -> {
-            for (int i = 0; i < ints.length; ++i) {
-                if (ints[i] < 0) this.getLogger().warning("Database setup command #" + (i + 1) + " failed.");
-                else this.getLogger().info("Database setup command #" + (i + 1) + " completed.");
-            }
-        }).thenRun(() -> {
+        ).thenRun(() -> {
             Events.register(new Sourcing());
             List<Addon> loaded = new ArrayList<>();
             Dynamics.loadDir(Elemengine.getAddonsFolder(), true, Addon.class, loaded::add);
@@ -76,8 +71,7 @@ public class Elemengine extends JavaPlugin {
         }
         
         addon.startup();
-        Config.process(addon);
-        Events.register(addon);
+        Events.register(Config.process(addon));
         
         for (SubCommand cmd : addon.commandRegistrator().get()) {
             addon.cmdIds.add(Commands.manager().register(cmd));

@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.util.math;
+package com.elemengine.elemengine.ability.component;
 
 import org.bukkit.Location;
 

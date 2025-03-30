@@ -1,9 +1,11 @@
-package com.elemengine.elemengine.command;
+package com.elemengine.elemengine.command.type;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -11,13 +13,24 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import com.elemengine.elemengine.Addon;
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.ability.Abilities;
+import com.elemengine.elemengine.ability.AbilityInfo;
 import com.elemengine.elemengine.ability.AbilityUser;
+import com.elemengine.elemengine.command.Commands;
+import com.elemengine.elemengine.command.SubCommand;
+import com.elemengine.elemengine.command.TabComplete;
+import com.elemengine.elemengine.command.TabCompleteList;
+import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.storage.configuration.Configurable;
+import com.elemengine.elemengine.storage.configuration.Configure;
 import com.elemengine.elemengine.user.Users;
+import com.elemengine.elemengine.util.spigot.Chat;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 
 public class ConfigureCommand extends SubCommand {
@@ -27,7 +40,15 @@ public class ConfigureCommand extends SubCommand {
     public static final int FIELD_ARG = OBJ_ARG + 1;
     public static final int VALUE_ARG = FIELD_ARG + 1;
     public static final int RELOAD_ARG = VALUE_ARG + 1;
-
+    
+    @Configure String usageErr = "Not enough arguments given, try: {usage}";
+    @Configure String noType = "No type of configurable object found from '{input}'";
+    @Configure String success = "Successfully set the value and reloaded the {type}.";
+    @Configure String successNoReload = "Successfully set the value. The {type} will not update in-game until reloaded.";
+    @Configure String notFound = "Could not find that {type}.";
+    
+    private Map<String, ConfigureOption> types = new HashMap<>();
+    
     public ConfigureCommand() {
         super(
             "configure", 
@@ -35,6 +56,10 @@ public class ConfigureCommand extends SubCommand {
             "/elemengine configure <type> <object> [<path> <value> [reload]]" , 
             Arrays.asList("config", "cfg", "c")
         );
+        this.register(new ConfigureAbility());
+        this.register(new ConfigureAddon());
+        this.register(new ConfigureCmd());
+        this.register(new ConfigureElement());
     }
 
     @Override
@@ -43,75 +68,170 @@ public class ConfigureCommand extends SubCommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (args.length <= OBJ_ARG) {
-            sender.sendMessage(ChatColor.RED + "Expected: " + this.getUsage());
+            sender.sendMessage(ChatColor.RED + usageErr.replace("{usage}", getUsage()));
             return;
         }
         
         String type = args[TYPE_ARG];
-        
-        if (type.equalsIgnoreCase("ability")) {
-            Abilities.manager().getInfo(args[OBJ_ARG]).ifPresentOrElse(a -> {
-                if (modifyField(sender, args, a)) {
-                    Config.process(a);
-                    Users.manager().registered().forEach(AbilityUser::refresh);
-                    sender.sendMessage(ChatColor.GREEN + "Successfully set the value and reloaded the ability.");
-                } else {
-                    sender.sendMessage(ChatColor.GREEN + "Successfully set the value. The value will not update in-game until reloaded.");
-                }
-            }, () -> {
-                sender.sendMessage(ChatColor.RED + "Unknown ability");
-            });
-        } else if (type.equalsIgnoreCase("addon")) {
-            Elemengine.getAddon(args[OBJ_ARG]).ifPresentOrElse(a -> {
-                if (modifyField(sender, args, a)) {
-                    Elemengine.reload(a);
-                    sender.sendMessage(ChatColor.GREEN + "Successfully set the value and reloaded the addon.");
-                } else {
-                    sender.sendMessage(ChatColor.GREEN + "Successfully set the value. The value will not update in-game until reloaded.");
-                }
-            }, () -> {
-                sender.sendMessage(ChatColor.RED + "Unknown addon");
-            });
+        ConfigureOption found = types.get(type);
+        if (found == null) {
+            sender.sendMessage(ChatColor.RED + noType.replace("{input}", type));
+            return;
         }
+        
+        Map<String, Component> tag = Map.of("{type}", Component.text(found.name()));    
+        
+        found.get(args[OBJ_ARG]).ifPresentOrElse(obj -> {
+            if (modifyField(sender, args, obj)) {
+                found.reload(obj);
+                sender.sendMessage(Chat.format(success, tag).colorIfAbsent(NamedTextColor.GREEN));
+            } else {
+                sender.sendMessage(Chat.format(successNoReload, tag).colorIfAbsent(NamedTextColor.GREEN));
+            }
+        }, () -> {
+            sender.sendMessage(Chat.format(notFound, tag).colorIfAbsent(NamedTextColor.GREEN));
+        });
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String[] args) {
+    public TabComplete tabComplete(CommandSender sender, String[] args) {
         if (args.length == 1) {
-            List<String> types = new ArrayList<>();
-            types.add("ability");
-            types.add("addon");
-            return types;
+            return new TabComplete(new ArrayList<>(types.keySet()));
         }
         
-        List<String> options = new ArrayList<>();
+        TabComplete options = new TabComplete();
         String type = args[TYPE_ARG];
-        
-        if (args.length == 2) {
-            if (type.equalsIgnoreCase("ability")) {
-                return Abilities.manager().registered().stream().map(a -> a.getName()).collect(Collectors.toList());
-            } else if (type.equalsIgnoreCase(type)) {
-                return Elemengine.listAddons().stream().map(a -> a.getInternalName()).collect(Collectors.toList());
-            }
-        }
-        
-        if (type.equalsIgnoreCase("ability")) {
-            Abilities.manager().getInfo(args[OBJ_ARG]).ifPresentOrElse(
-                a -> listConfigurableFields(args, options, a), 
-                () -> options.add("ability not found")
-            );
-        } else if (type.equalsIgnoreCase("addon")) {
-            Elemengine.getAddon(args[OBJ_ARG]).ifPresentOrElse(
-                a -> listConfigurableFields(args, options, a),
-                () -> options.add("addon not found")
-            );
-        }
-        
-        if (options.isEmpty()) {
+        ConfigureOption option = types.get(type);
+        if (option == null) {
             return null;
+        } else if (args.length == 2) {
+            return new TabComplete(option.possibilities());
+        } else {
+            
+            option.get(args[OBJ_ARG]).ifPresentOrElse(
+                a -> listConfigurableFields(args, options, a), 
+                () -> {
+                    options.add("not found");
+                    options.shouldFilter(false);
+                }
+            );
         }
         
         return options;
+    }
+    
+    public void register(ConfigureOption type) {
+        if (types.containsKey(type.name().toLowerCase())) {
+            return;
+        }
+        
+        this.types.put(type.name().toLowerCase(), type);
+    }
+    
+    public interface ConfigureOption {
+        String name();
+        Optional<? extends Configurable> get(String str);
+        void reload(Configurable obj);
+        List<String> possibilities();
+    }
+    
+    private class ConfigureAbility implements ConfigureOption {
+
+        @Override
+        public String name() {
+            return "ability";
+        }
+
+        @Override
+        public Optional<AbilityInfo> get(String str) {
+            return Abilities.manager().getInfo(str);
+        }
+
+        @Override
+        public void reload(Configurable obj) {
+            Config.process(obj);
+            Users.manager().registered().forEach(AbilityUser::refresh);
+        }
+
+        @Override
+        public List<String> possibilities() {
+            return TabCompleteList.abilities();
+        }
+        
+    }
+    
+    private class ConfigureAddon implements ConfigureOption {
+
+        @Override
+        public String name() {
+            return "addon";
+        }
+
+        @Override
+        public Optional<Addon> get(String str) {
+            return Elemengine.getAddon(str);
+        }
+
+        @Override
+        public void reload(Configurable obj) {
+            if (obj instanceof Addon addon) {
+                Elemengine.reload(addon);
+            }
+        }
+
+        @Override
+        public List<String> possibilities() {
+            return Elemengine.listAddons().stream().map(a -> a.getInternalName()).collect(Collectors.toList());
+        }
+        
+    }
+    
+    private class ConfigureCmd implements ConfigureOption {
+
+        @Override
+        public String name() {
+            return "command";
+        }
+
+        @Override
+        public Optional<? extends Configurable> get(String str) {
+            return Commands.manager().get(str);
+        }
+
+        @Override
+        public void reload(Configurable obj) {
+            Config.process(obj);
+        }
+
+        @Override
+        public List<String> possibilities() {
+            return new ArrayList<>(Commands.manager().registered());
+        }
+        
+    }
+    
+    private class ConfigureElement implements ConfigureOption {
+
+        @Override
+        public String name() {
+            return "element";
+        }
+
+        @Override
+        public Optional<? extends Configurable> get(String str) {
+            return Optional.ofNullable(Element.from(str));
+        }
+
+        @Override
+        public void reload(Configurable obj) {
+            Config.process(obj);
+        }
+
+        @Override
+        public List<String> possibilities() {
+            return TabCompleteList.elements(false);
+        }
+        
     }
     
     private boolean modifyField(CommandSender sender, String[] args, Configurable c) {
@@ -155,7 +275,7 @@ public class ConfigureCommand extends SubCommand {
         return true;
     }
     
-    private void listConfigurableFields(String[] args, List<String> list, Configurable c) {
+    private void listConfigurableFields(String[] args, TabComplete list, Configurable c) {
         FileConfiguration fc = Config.from(c).into();
         
         if (args.length == FIELD_ARG + 1) {
@@ -195,12 +315,12 @@ public class ConfigureCommand extends SubCommand {
                     type += "text";
                 }
                 
-                list.add(type); 
+                list.add(type);
             });
             
             if (value != null) {
                 list.add("current: " + value);
-                list.add(args[VALUE_ARG]);
+                list.shouldFilter(false);
             } else {
                 list.add("path not found");
             }

@@ -193,7 +193,7 @@ public class Dynamics {
                         String className = entry.getName().replace('/', '.').substring(0, entry.getName().length() - 6);
                         Class<?> clazz = Class.forName(className, true, loader);
 
-                        if (entry.getName().contains("$") || clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
+                        if (clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
                             continue;
                         }
 

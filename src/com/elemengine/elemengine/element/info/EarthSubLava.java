@@ -19,7 +19,7 @@ public class EarthSubLava implements ElementInfo {
 
     @Override
     public String getChatColor() {
-        return "";
+        return "#ed5408";
     }
 
     @Override

@@ -32,14 +32,14 @@ public class Collider {
         this.removal = removal;
     }
     
-    public Collider(String tag, Location center, AbilityInstance<?> removal, Consumer<TreeQueryResult> collided) {
+    public Collider(String tag, Location center, AbilityInstance removal, Consumer<TreeQueryResult> collided) {
         this.tag = tag;
         this.center = center;
         this.collided = collided;
         this.removal = () -> Abilities.manager().stopInstance(removal);
     }
     
-    public Collider(String tag, Location center, AbilityInstance<?> removal) {
+    public Collider(String tag, Location center, AbilityInstance removal) {
         this(tag, center, removal, null);
     }
 

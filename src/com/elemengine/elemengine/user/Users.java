@@ -86,7 +86,6 @@ public class Users extends Manager implements Listener {
     @Override
     protected void clean() {
         cache.values().forEach(this::save);
-
         cache.clear();
     }
 
@@ -127,10 +126,8 @@ public class Users extends Manager implements Listener {
                 
                 db.read(T_PLAYER_ELEMENTS_READ.replace("&1", player.getUniqueId().toString()), elementRs -> {
                     while (elementRs.next()) {
-                        Element element;
-                        try {
-                            element = Element.valueOf(elementRs.getString("element_name").toUpperCase());
-                        } catch (Exception e) {
+                        Element element = Element.from(elementRs.getString("element_name").toUpperCase());
+                        if (element == null) {
                             continue;
                         }
     

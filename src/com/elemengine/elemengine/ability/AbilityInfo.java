@@ -14,8 +14,8 @@ import com.elemengine.elemengine.element.relation.SingleRelation;
 import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.storage.configuration.Configurable;
 
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 
 public abstract class AbilityInfo implements Configurable, Listener {
 
@@ -40,12 +40,9 @@ public abstract class AbilityInfo implements Configurable, Listener {
         this.relation = ElementRelation.single(element);
     }
 
-    public BaseComponent createComponent() {
-        TextComponent comp = new TextComponent();
-        
+    public Component createComponent() {
         if (relation instanceof SingleRelation single) {
-            comp.setColor(single.element().getChatColor());
-            comp.addExtra(this.name);
+            return Component.text(this.name).color(single.element().getChatColor());
         } else {
             Element[] elements = null;
             if (relation instanceof MultipleAnyRelation any) {
@@ -54,17 +51,16 @@ public abstract class AbilityInfo implements Configurable, Listener {
                 elements = exc.elements();
             }
             
+            TextComponent.Builder bldr = Component.text();
             int i = 0;
             final int l = this.name.length() / elements.length;
             for (Element element : elements) {
-                TextComponent extra = new TextComponent(this.name.substring(i * l, (i + 1) * l));
-                extra.setColor(element.getChatColor());
-                comp.addExtra(extra);
+                bldr.append(Component.text(this.name.substring(i * l, (i + 1) * l)).color(element.getChatColor()));
                 ++i;
             }
+            
+            return bldr.asComponent();
         }
-        
-        return comp;
     }
     
     public final BigInteger getBitFlag() {

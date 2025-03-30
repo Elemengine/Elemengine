@@ -1,4 +1,4 @@
-package com.elemengine.elemengine.command;
+package com.elemengine.elemengine.command.type;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,21 +17,30 @@ import org.bukkit.inventory.meta.SkullMeta;
 import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.ability.Abilities;
 import com.elemengine.elemengine.ability.AbilityInfo;
+import com.elemengine.elemengine.command.SubCommand;
+import com.elemengine.elemengine.command.TabComplete;
 import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.storage.configuration.Configure;
 import com.elemengine.elemengine.user.PlayerUser;
 import com.elemengine.elemengine.user.Users;
+import com.elemengine.elemengine.util.Strings;
 import com.elemengine.elemengine.util.gui.Button;
 import com.elemengine.elemengine.util.gui.Menu;
 import com.elemengine.elemengine.util.gui.Menu.Height;
 import com.elemengine.elemengine.util.spigot.Items;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 
 public class MenuCommand extends SubCommand {
 
     @Configure String emptyBindMaterial = "BARRIER";
+    @Configure String extraArgs = "Note: this command does not take any args";
+    @Configure String playerOnly = "This is a player-only command.";
+    @Configure String noPermission = "You do not have permission to use that command.";
+    @Configure String userErr = "Error retrieving user information. Try again later.";
 
     private Material emptyBind;
 
@@ -52,24 +61,23 @@ public class MenuCommand extends SubCommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (args.length > 0) {
-            sender.sendMessage(ChatColor.RED + "Command takes no args!");
-            return;
+            sender.sendMessage(ChatColor.RED + extraArgs);
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Command is player-only!");
+            sender.sendMessage(ChatColor.RED + playerOnly);
             return;
         }
         
         if (!hasPermission(sender)) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission to perform that command.");
+            sender.sendMessage(ChatColor.RED + noPermission);
             return;
         }
 
         PlayerUser player = Users.manager().get((Player) sender).getAs(PlayerUser.class);
         
         if (player == null) {
-            sender.sendMessage(ChatColor.RED + "Unable to find user info.");
+            sender.sendMessage(ChatColor.RED + userErr);
             return;
         }
         
@@ -77,8 +85,8 @@ public class MenuCommand extends SubCommand {
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String[] args) {
-        return null;
+    public TabComplete tabComplete(CommandSender sender, String[] args) {
+        return TabComplete.ERROR;
     }
     
     private List<Menu> menus() {
@@ -241,10 +249,10 @@ public class MenuCommand extends SubCommand {
     
     private ItemStack elementItem(Element element, boolean manageMenu, PlayerUser user) {
         return Items.create(element.getMaterial(), meta -> {
-            meta.setDisplayName(element.getColoredName());
+            meta.displayName(Component.text(element.getDisplayName()).color(element.getChatColor()));
             
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.WHITE + element.getDescription());
+            Strings.wrapAnd(element.getDescription(), 28, s -> lore.add(ChatColor.WHITE + s));
             
             if (manageMenu) {
                 lore.add(ChatColor.LIGHT_PURPLE + "Left: " + ChatColor.YELLOW + "Toggle");
@@ -260,7 +268,7 @@ public class MenuCommand extends SubCommand {
 
     private ItemStack abilityItem(AbilityInfo info) {
         return Items.create(Material.PAPER, meta -> {
-            meta.setDisplayName(info.createComponent().toLegacyText());
+            meta.displayName(info.createComponent());
             meta.setLore(List.of(info.getDescription()));
             meta.addItemFlags(ItemFlag.values());
         });
@@ -268,17 +276,17 @@ public class MenuCommand extends SubCommand {
 
     private ItemStack bindItem(int slot, AbilityInfo info) {
         Material type = emptyBind;
-        String bind = ChatColor.WHITE + "NONE";
+        Component bind = Component.text("empty").color(NamedTextColor.GRAY);
 
         if (info != null) {
             type = Material.PAPER;
-            bind = info.createComponent().toLegacyText();
+            bind = info.createComponent();
         }
 
-        String bound = bind;
+        Component bound = Component.text("Slot " + (slot + 1) + ": ").color(NamedTextColor.WHITE).append(bind);
 
         return Items.create(type, meta -> {
-            meta.setDisplayName(ChatColor.WHITE + "Slot " + (slot + 1) + ": " + bound);
+            meta.displayName(bound);
             meta.setLore(Arrays.asList(ChatColor.LIGHT_PURPLE + "Left: " + ChatColor.YELLOW + "Rebind slot", ChatColor.LIGHT_PURPLE + "Right: " + ChatColor.YELLOW + "Clear slot"));
             meta.addItemFlags(ItemFlag.values());
         });
@@ -289,8 +297,8 @@ public class MenuCommand extends SubCommand {
         SkullMeta meta = (SkullMeta) playerHead.getItemMeta();
 
         meta.setDisplayName(ChatColor.WHITE + player.getEntity().getName());
-        meta.setLore(player.getElements().stream().map(s -> "- " + s.getColoredName()).collect(Collectors.toList()));
-        meta.setOwnerProfile(player.getEntity().getPlayerProfile());
+        meta.lore(player.getElements().stream().map(e -> Component.text("- ").append(Component.text(e.getDisplayName()).color(e.getChatColor()))).collect(Collectors.toList()));
+        meta.setOwningPlayer(player.getEntity());
         meta.addItemFlags(ItemFlag.values());
 
         playerHead.setItemMeta(meta);

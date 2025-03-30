@@ -26,7 +26,7 @@ public class WaterSubPlant implements ElementInfo {
 
     @Override
     public Material getMaterial() {
-        return Material.GREEN_GLAZED_TERRACOTTA;
+        return Material.KELP;
     }
 
     @Override

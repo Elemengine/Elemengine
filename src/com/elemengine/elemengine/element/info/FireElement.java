@@ -24,7 +24,7 @@ public class FireElement implements ElementInfo {
 
     @Override
     public Material getMaterial() {
-        return Material.RED_CONCRETE;
+        return Material.BLAZE_POWDER;
     }
 
     @Override

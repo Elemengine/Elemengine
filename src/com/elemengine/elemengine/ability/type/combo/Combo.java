@@ -7,7 +7,7 @@ import com.elemengine.elemengine.ability.AbilityUser;
 
 public interface Combo {
     
-    public AbilityInstance<?> createComboInstance(AbilityUser user);
+    public AbilityInstance createComboInstance(AbilityUser user);
 
     public List<SequenceInfo> getSequence();
 

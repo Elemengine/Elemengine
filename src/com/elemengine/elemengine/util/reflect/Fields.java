@@ -8,6 +8,22 @@ public final class Fields {
     
     private Fields() {}
     
+    public static Optional<Object> get(Object obj, String name) {
+        try {
+            Field field = obj.getClass().getDeclaredField(name);
+            Object value = null;
+            boolean access = field.canAccess(obj);
+            field.setAccessible(true);
+            
+            value = field.get(obj);
+            
+            field.setAccessible(access);
+            return Optional.ofNullable(value);
+        } catch (Exception e) {}
+        
+        return Optional.empty();
+    }
+    
     public static Optional<Object> get(Object obj, Field field) {
         Object value = null;
         boolean access = field.canAccess(obj);
@@ -21,6 +37,22 @@ public final class Fields {
         
         field.setAccessible(access);
         return Optional.ofNullable(value);
+    }
+    
+    public static <T> Optional<T> getAs(Object obj, String name, Class<T> clazz) {
+        try {
+            Field field = obj.getClass().getDeclaredField(name);
+            T value = null;
+            boolean access = field.canAccess(obj);
+            field.setAccessible(true);
+            
+            value = clazz.cast(field.get(obj));
+            
+            field.setAccessible(access);
+            return Optional.ofNullable(value);
+        } catch (Exception e) {}
+        
+        return Optional.empty();
     }
     
     public static <T> Optional<T> getAs(Object obj, Field field, Class<T> clazz) {

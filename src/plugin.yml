@@ -2,7 +2,7 @@ main: com.elemengine.elemengine.Elemengine
 name: Elemengine
 version: 1.0.0
 description: Elemental bending implemented into Minecraft Spigot
-api-version: "1.20"
+api-version: "1.21"
 authors: [Simplicitee]
 commands:
   elemengine:

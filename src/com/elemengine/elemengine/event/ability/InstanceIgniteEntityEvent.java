@@ -14,9 +14,9 @@ public class InstanceIgniteEntityEvent extends Event implements Cancellable {
     private boolean cancelled = false;
     private LivingEntity target;
     private int fireTicks;
-    private AbilityInstance<?> source;
+    private AbilityInstance source;
 
-    public InstanceIgniteEntityEvent(LivingEntity target, int fireTicks, AbilityInstance<?> source) {
+    public InstanceIgniteEntityEvent(LivingEntity target, int fireTicks, AbilityInstance source) {
         this.target = target;
         this.fireTicks = fireTicks;
         this.source = source;
@@ -34,7 +34,7 @@ public class InstanceIgniteEntityEvent extends Event implements Cancellable {
         this.fireTicks = fireTicks;
     }
 
-    public AbilityInstance<?> getInstance() {
+    public AbilityInstance getInstance() {
         return source;
     }
 

@@ -11,26 +11,13 @@ import org.bukkit.World;
 import com.elemengine.elemengine.ability.attribute.Attribute;
 import com.elemengine.elemengine.ability.attribute.AttributeGroup;
 import com.elemengine.elemengine.ability.attribute.Modifier;
+import com.elemengine.elemengine.event.ability.AttributesRecalculateEvent;
 import com.elemengine.elemengine.util.reflect.Fields;
+import com.elemengine.elemengine.util.spigot.Events;
 
-public abstract class AbilityInstance<T extends AbilityInfo> implements Comparable<AbilityInstance<?>> {
-
-    // QoL copies of common attributes
-    protected static final String SPEED = Attribute.SPEED;
-    protected static final String RANGE = Attribute.RANGE;
-    protected static final String SELECT_RANGE = Attribute.SELECT_RANGE;
-    protected static final String DAMAGE = Attribute.DAMAGE;
-    protected static final String COOLDOWN = Attribute.COOLDOWN;
-    protected static final String DURATION = Attribute.DURATION;
-    protected static final String RADIUS = Attribute.RADIUS;
-    protected static final String CHARGE_TIME = Attribute.CHARGE_TIME;
-    protected static final String WIDTH = Attribute.WIDTH;
-    protected static final String HEIGHT = Attribute.HEIGHT;
-    protected static final String KNOCKBACK = Attribute.KNOCKBACK;
-    protected static final String KNOCKUP = Attribute.KNOCKUP;
-    protected static final String FIRE_TICK = Attribute.FIRE_TICK;
-
-    static final Map<Class<? extends AbilityInstance<?>>, Map<String, Field>> ATTRIBUTES = new HashMap<>();
+public abstract class AbilityInstance {
+    
+    static final Map<Class<? extends AbilityInstance>, Map<String, Field>> ATTRIBUTE_FIELDS = new HashMap<>();
     
     /**
      * Represents what state the instance exists in. Typically instances will go through
@@ -51,59 +38,45 @@ public abstract class AbilityInstance<T extends AbilityInfo> implements Comparab
          */
         STOPPING
     }
-    
-    public enum VelocityEffect {
-        /**
-         * Does not affect the velocity of any entity
-         */
-        NONE,
-        
-        /**
-         * Changes the velocity of some entity depending on their current velocity
-         */
-        CHANGER,
-        
-        /**
-         * Sets the velocity of some entity, overriding any current velocity
-         */
-        SET_NONZERO,
-        
-        /**
-         * Sets the velocity of some entity to zero, overriding any current velocity
-         */
-        SET_ZERO
-    }
 
-    protected final T provider;
+    protected final AbilityInfo provider;
     protected final AbilityUser user;
     protected final World world;
+    
     private final Map<Field, Modifier> mods = new HashMap<>();
     
     private Phase state = Phase.STARTING;
     private int counter = -1;
     private long startTime = -1;
 
-    public AbilityInstance(T provider, AbilityUser user) {
+    public AbilityInstance(AbilityInfo provider, AbilityUser user) {
         this.provider = provider;
         this.user = user;
         this.world = user.getWorld();
     }
 
     final void start() {
-        startTime = System.currentTimeMillis();
-
-        Iterator<Entry<Field, Modifier>> iter = mods.entrySet().iterator();
-        while (iter.hasNext()) {
-            Entry<Field, Modifier> entry = iter.next();
-            Fields.getSet(this, entry.getKey(), value -> entry.getValue().apply(value));
-            iter.remove(); //don't need that anymore
+        for (Field field : this.getClass().getDeclaredFields()) {
+            if (!field.isAnnotationPresent(Attribute.class)) continue;
+            
+            Attribute attr = field.getAnnotation(Attribute.class);
+            if (!attr.auto()) continue;
+            
+            String autoField = attr.autoField();
+            if (autoField.isBlank()) {
+                autoField = field.getName();
+            }
+            
+            Fields.get(provider, autoField).ifPresent(v -> Fields.set(this, field, v));
         }
         
-        state = Phase.STOPPING;
-
+        startTime = System.currentTimeMillis();
+        
         if (this.onStart()) {
             user.active.add(this);
             state = Phase.UPDATING;
+        } else {
+            state = Phase.STOPPING;
         }
     }
 
@@ -122,7 +95,7 @@ public abstract class AbilityInstance<T extends AbilityInfo> implements Comparab
         counter = -1;
     }
 
-    public final T getProvider() {
+    public final AbilityInfo getProvider() {
         return provider;
     }
 
@@ -132,6 +105,42 @@ public abstract class AbilityInstance<T extends AbilityInfo> implements Comparab
     
     public final Phase getPhase() {
         return state;
+    }
+
+    public final boolean addAttributeModifier(String attribute, Modifier mod) {
+        if (!this.hasAttribute(attribute)) {
+            return false;
+        }
+
+        Field field = ATTRIBUTE_FIELDS.get(this.getClass()).get(attribute);
+        mods.compute(field, (k, v) -> mod.and(v));
+        return true;
+    }
+
+    public final boolean[] addAttributeModifier(AttributeGroup group, Modifier mod) {
+        boolean[] worked = new boolean[group.size()];
+        int i = -1;
+
+        for (String attribute : group.getAttributes()) {
+            worked[++i] = this.addAttributeModifier(attribute, mod);
+        }
+
+        return worked;
+    }
+    
+    public final void recalculateAttributes() {
+        Events.call(new AttributesRecalculateEvent(this));
+        
+        Iterator<Entry<Field, Modifier>> iter = mods.entrySet().iterator();
+        while (iter.hasNext()) {
+            Entry<Field, Modifier> entry = iter.next();
+            Fields.getSet(this, entry.getKey(), value -> entry.getValue().apply(value));
+            iter.remove();
+        }
+    }
+    
+    public final boolean hasAttribute(String attribute) {
+        return ATTRIBUTE_FIELDS.containsKey(this.getClass()) && ATTRIBUTE_FIELDS.get(this.getClass()).containsKey(attribute);
     }
 
     /**
@@ -171,31 +180,6 @@ public abstract class AbilityInstance<T extends AbilityInfo> implements Comparab
     public final boolean hasStarted() {
         return startTime >= 0;
     }
-
-    public final boolean hasAttribute(String attribute) {
-        return ATTRIBUTES.containsKey(this.getClass()) && ATTRIBUTES.get(this.getClass()).containsKey(attribute);
-    }
-
-    public final boolean addModifier(String attribute, Modifier mod) {
-        if (!this.hasAttribute(attribute)) {
-            return false;
-        }
-
-        Field field = ATTRIBUTES.get(this.getClass()).get(attribute);
-        mods.compute(field, (k, v) -> mod.and(v));
-        return true;
-    }
-
-    public final boolean[] addModifier(AttributeGroup group, Modifier mod) {
-        boolean[] worked = new boolean[group.size()];
-        int i = -1;
-
-        for (String attribute : group.getAttributes()) {
-            worked[++i] = this.addModifier(attribute, mod);
-        }
-
-        return worked;
-    }
     
     public boolean hasUpdate() {
         return true;
@@ -204,12 +188,6 @@ public abstract class AbilityInstance<T extends AbilityInfo> implements Comparab
     public String getName() {
         return provider.getName();
     }
-    
-    /**
-     * Gets how this instance affects the velocity of some entity
-     * @return
-     */
-    protected abstract VelocityEffect getVelocityEffect();
 
     /**
      * Method called when the instance is started
@@ -230,9 +208,19 @@ public abstract class AbilityInstance<T extends AbilityInfo> implements Comparab
      * Method called when instance is stopped
      */
     protected abstract void onStop();
-    
-    @Override
-    public final int compareTo(AbilityInstance<?> othr) {
-        return othr.getVelocityEffect().ordinal() - this.getVelocityEffect().ordinal();
-    }
+
+    // QoL copies of common attributes
+    protected static final String SPEED = Attribute.SPEED;
+    protected static final String RANGE = Attribute.RANGE;
+    protected static final String SELECT_RANGE = Attribute.SELECT_RANGE;
+    protected static final String DAMAGE = Attribute.DAMAGE;
+    protected static final String COOLDOWN = Attribute.COOLDOWN;
+    protected static final String DURATION = Attribute.DURATION;
+    protected static final String RADIUS = Attribute.RADIUS;
+    protected static final String CHARGE_TIME = Attribute.CHARGE_TIME;
+    protected static final String WIDTH = Attribute.WIDTH;
+    protected static final String HEIGHT = Attribute.HEIGHT;
+    protected static final String KNOCKBACK = Attribute.KNOCKBACK;
+    protected static final String KNOCKUP = Attribute.KNOCKUP;
+    protected static final String FIRE_TICK = Attribute.FIRE_TICK;
 }

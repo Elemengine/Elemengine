@@ -14,10 +14,10 @@ public class InstanceDamageEntityEvent extends Event implements Cancellable {
     private boolean cancelled = false;
     private LivingEntity target;
     private double damage;
-    private AbilityInstance<?> source;
+    private AbilityInstance source;
     private boolean ignoreArmor;
 
-    public InstanceDamageEntityEvent(LivingEntity target, double damage, AbilityInstance<?> source, boolean ignoreArmor) {
+    public InstanceDamageEntityEvent(LivingEntity target, double damage, AbilityInstance source, boolean ignoreArmor) {
         this.target = target;
         this.damage = damage;
         this.source = source;
@@ -32,7 +32,7 @@ public class InstanceDamageEntityEvent extends Event implements Cancellable {
         return damage;
     }
 
-    public AbilityInstance<?> getInstance() {
+    public AbilityInstance getInstance() {
         return source;
     }
 

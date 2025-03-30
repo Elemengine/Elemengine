@@ -14,11 +14,11 @@ import com.elemengine.elemengine.element.Element;
 public class TabCompleteList {
     
     public static List<String> abilities() {
-        return Abilities.manager().registered().stream().map(a -> a.getName()).collect(Collectors.toList());
+        return Abilities.manager().registered().stream().map(a -> a.getName().toLowerCase().replace(" ", "_")).collect(Collectors.toList());
     }
 
     public static List<String> bindables(AbilityUser user) {
-        return Abilities.manager().getUserBindables(user).stream().map((a) -> a.getName()).collect(Collectors.toList());
+        return Abilities.manager().getUserBindables(user).stream().map(a -> a.getName().toLowerCase().replace(" ", "_")).collect(Collectors.toList());
     }
 
     public static List<String> slots() {
@@ -26,10 +26,10 @@ public class TabCompleteList {
     }
 
     public static List<String> onlinePlayers() {
-        return Bukkit.getOnlinePlayers().stream().map((p) -> p.getName()).collect(Collectors.toList());
+        return Bukkit.getOnlinePlayers().stream().map(p -> p.getName()).collect(Collectors.toList());
     }
 
     public static List<String> elements(boolean parentOnly) {
-        return Element.streamValues().filter((s) -> !parentOnly || !s.getChildren().isEmpty()).map((s) -> s.toString().toLowerCase()).collect(Collectors.toList());
+        return Element.streamValues().filter(s -> !parentOnly || !s.getChildren().isEmpty()).map((s) -> s.toString().toLowerCase()).collect(Collectors.toList());
     }
 }
