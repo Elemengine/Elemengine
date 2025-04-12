@@ -1,7 +1,5 @@
 package com.elemengine.elemengine.ability;
 
-import java.math.BigInteger;
-
 import org.bukkit.event.Listener;
 
 import com.elemengine.elemengine.ability.activation.Trigger;
@@ -21,8 +19,6 @@ public abstract class AbilityInfo implements Configurable, Listener {
 
     private final String name, author, version, description;
     private final ElementRelation relation;
-    
-    BigInteger bitFlag;
 
     protected AbilityInfo(String name, String description, String author, String version, ElementRelation relation) {
         this.name = name;
@@ -61,10 +57,6 @@ public abstract class AbilityInfo implements Configurable, Listener {
             
             return bldr.asComponent();
         }
-    }
-    
-    public final BigInteger getBitFlag() {
-        return bitFlag;
     }
 
     public final String getName() {

@@ -9,60 +9,51 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import com.elemengine.elemengine.command.Commands;
 import com.elemengine.elemengine.command.SubCommand;
 import com.elemengine.elemengine.storage.configuration.Config;
-import com.elemengine.elemengine.storage.database.DBConnection;
-import com.elemengine.elemengine.storage.database.SQLiteDatabase;
+import com.elemengine.elemengine.storage.database.Database;
+import com.elemengine.elemengine.storage.database.sqlite.SQLiteDatabase;
 import com.elemengine.elemengine.util.reflect.Dynamics;
 import com.elemengine.elemengine.util.spigot.Events;
 import com.elemengine.elemengine.util.spigot.Threads;
 
-public class Elemengine extends JavaPlugin {
+public class Elemengine {
 
-    private static final String DB_FILE = "storage.db";
     private static final String ADDONS_FOLDER = "/addons/";
     private static final String ABILITIES_FOLDER = "/abilities/";
     private static final Map<String, Addon> ADDONS = new HashMap<>();
     
-    private DBConnection database;
-
-    @Override
-    public void onEnable() {
-        database = new DBConnection(new SQLiteDatabase(new File(this.getDataFolder(), DB_FILE)));
-        
-        database.send(
-            "CREATE TABLE IF NOT EXISTS t_player (uuid TEXT)",
-            "CREATE TABLE IF NOT EXISTS t_player_elements (uuid TEXT, element_name TEXT, toggled NUMBER, PRIMARY KEY (uuid, element_name))",
-            "CREATE TABLE IF NOT EXISTS t_player_binds (uuid TEXT, bound_slot NUMBER, ability_name TEXT, PRIMARY KEY (uuid, bound_slot))",
-            "CREATE TABLE IF NOT EXISTS t_ability_ids (id INTEGER, ability_name TEXT, PRIMARY KEY (id, ability_name))",
-            "CREATE TABLE IF NOT EXISTS t_player_abilities (uuid TEXT, ability_id INTEGER, PRIMARY KEY (uuid, ability_id))"
-        ).thenRun(() -> {
-            Events.register(new Sourcing());
-            List<Addon> loaded = new ArrayList<>();
-            Dynamics.loadDir(Elemengine.getAddonsFolder(), true, Addon.class, loaded::add);
-            Manager.init(loaded);
-            
-            for (Addon addon : loaded) {
-                load(addon, true);
-                Elemengine.plugin().getLogger().info("Loaded addon " + addon.getName() + " v" + addon.getVersion() + " by " + addon.getAuthor());
-            }
-            
-            Threads.onTimer(Manager::update, 1, 0);
-        }).join();
+    private static ElemenginePlugin plugin;
+    private static Database database;
+    
+    static void init(ElemenginePlugin provider) {
+        plugin = provider;
     }
-
-    @Override
-    public void onDisable() {
+    
+    static void enable() {
+        database = new SQLiteDatabase();
+        database.setup();
+        
+        Events.register(new Sourcing());
+        List<Addon> loaded = new ArrayList<>();
+        Dynamics.loadDir(Elemengine.getAddonsFolder(), true, Addon.class, loaded::add);
+        Manager.init(loaded);
+        
+        for (Addon addon : loaded) {
+            load(addon, true);
+            logger().info("Loaded addon " + addon.getName() + " v" + addon.getVersion() + " by " + addon.getAuthor());
+        }
+        
+        Threads.onTimer(Manager::update, 1, 0);
+    }
+    
+    static void destroy() {
         for (Addon addon : ADDONS.values()) {
             addon.cleanup();
         }
         ADDONS.clear();
         Manager.onDisable();
-        HandlerList.unregisterAll(this);
     }
     
     private static void load(Addon addon, boolean cache) {
@@ -89,20 +80,20 @@ public class Elemengine extends JavaPlugin {
         Elemengine.load(addon, false);
     }
 
-    public DBConnection getDatabase() {
+    public static Database database() {
         return database;
     }
 
-    public static Elemengine plugin() {
-        return JavaPlugin.getPlugin(Elemengine.class);
+    public static ElemenginePlugin plugin() {
+        return plugin;
     }
     
     public static Logger logger() {
-        return plugin().getLogger();
+        return plugin.getLogger();
     }
 
     public static File getFolder() {
-        return plugin().getDataFolder();
+        return plugin.getDataFolder();
     }
     
     public static File getAddonsFolder() {
@@ -123,10 +114,6 @@ public class Elemengine extends JavaPlugin {
         }
         
         return abilities;
-    }
-
-    public static DBConnection database() {
-        return plugin().getDatabase();
     }
 
     public static Optional<Addon> getAddon(String name) {

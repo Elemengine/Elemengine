@@ -195,16 +195,19 @@ public final class Molecule {
         
         private final boolean update() {
             Transformation transform = this.generateTransform();
+            
             if (transform == null) {
                 entity.remove();
                 return false;
             }
             
+            entity.setTeleportDuration(1);
             entity.teleport(entity.getLocation().add(drift.x, drift.y, drift.z), TeleportCause.PLUGIN);
-            entity.setTransformation(transform);
+            
             entity.setInterpolationDelay(0);
             entity.setInterpolationDuration(1);
-            entity.setTeleportDuration(1);
+            entity.setTransformation(transform);
+            
             return true;
         }
         

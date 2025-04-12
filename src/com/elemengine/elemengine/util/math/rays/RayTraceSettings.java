@@ -9,7 +9,6 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import com.elemengine.elemengine.util.math.Vectors;
-import com.elemengine.elemengine.util.spigot.EntityFilter;
 
 public class RayTraceSettings {
 
@@ -39,7 +38,7 @@ public class RayTraceSettings {
         return this;
     }
     
-    public RayTraceSettings entityFilter(EntityFilter filter, EntityFilter...extras) {
+    public RayTraceSettings entityFilter(RayFilter filter, RayFilter...extras) {
         this.filter = filter;
         
         int start = 0;

@@ -1,5 +1,6 @@
 package com.elemengine.elemengine.user;
 
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,17 +23,12 @@ import com.elemengine.elemengine.ability.AbilityInfo;
 import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.element.Element;
 import com.elemengine.elemengine.event.user.UserCreationEvent;
-import com.elemengine.elemengine.storage.database.DBConnection;
+import com.elemengine.elemengine.storage.database.DataKey;
+import com.elemengine.elemengine.storage.database.DataSchema;
+import com.elemengine.elemengine.storage.database.Database;
 import com.elemengine.elemengine.util.spigot.Events;
 
 public class Users extends Manager implements Listener {
-
-    private static final String 
-        T_PLAYER_READ                   = "SELECT * FROM t_player WHERE uuid = '&1'",
-        T_PLAYER_BINDS_READ             = "SELECT * FROM t_player_binds WHERE uuid = '&1'",
-        T_PLAYER_BINDS_READ_SPECIFIC    = "SELECT * FROM t_player_binds WHERE uuid = '&1' AND bound_slot = &2",
-        T_PLAYER_ELEMENTS_READ          = "SELECT * FROM t_player_elements WHERE uuid = '&1'",
-        T_PLAYER_ELEMENTS_READ_SPECIFIC = "SELECT * FROM t_player_elements WHERE uuid = '&1' AND element_name = '&2'";
     
     private Map<UUID, AbilityUser> cache = new HashMap<>();
     private long prevTime = System.currentTimeMillis(), autoSave = 1000 * 60 * 60, nextSave = System.currentTimeMillis() + autoSave;
@@ -50,6 +46,9 @@ public class Users extends Manager implements Listener {
     @Override
     protected void startup() {
         prevTime = System.currentTimeMillis();
+        Elemengine.database().create(StoredPlayer.class);
+        Elemengine.database().create(StoredPlayerElement.class);
+        Elemengine.database().create(StoredPlayerBind.class);
     }
 
     @Override
@@ -116,41 +115,37 @@ public class Users extends Manager implements Listener {
 
     public AbilityUser load(Player player) {
         AbilityUser user = cache.getOrDefault(player.getUniqueId(), new PlayerUser(player));
-        DBConnection db = Elemengine.database();
-
-        try {
-            db.read(T_PLAYER_READ.replace("&1", player.getUniqueId().toString()), rs -> {
-                if (!rs.next()) {
-                    return;
+        Database db = Elemengine.database();
+        
+        db.get(
+            StoredPlayer.class, 
+            f -> f.uuid = player.getUniqueId().toString()
+        ).ifPresent(storedPlayer -> {
+            Deque<StoredPlayerElement> elements = db.getAll(StoredPlayerElement.class, f -> f.uuid = player.getUniqueId().toString());
+            while (!elements.isEmpty()) {
+                StoredPlayerElement data = elements.pollFirst();
+                Element element = Element.from(data.element.toUpperCase());
+                if (element == null) {
+                    continue;
                 }
-                
-                db.read(T_PLAYER_ELEMENTS_READ.replace("&1", player.getUniqueId().toString()), elementRs -> {
-                    while (elementRs.next()) {
-                        Element element = Element.from(elementRs.getString("element_name").toUpperCase());
-                        if (element == null) {
-                            continue;
-                        }
-    
-                        user.addElement(element);
-                        if (elementRs.getInt("toggled") != 0) {
-                            user.toggle(element);
-                        }
-                    }
-                });
 
-                db.read(T_PLAYER_BINDS_READ.replace("&1", player.getUniqueId().toString()), abilityRs -> {
-                    while (abilityRs.next()) {
-                        int slot = abilityRs.getInt("bound_slot");
-    
-                        Manager.of(Abilities.class).getInfo(abilityRs.getString("ability_name")).ifPresent((ability) -> {
-                            user.bindAbility(slot, ability);
-                        });
-                    }
+                user.addElement(element);
+                if (data.toggled != null && data.toggled) {
+                    user.toggle(element);
+                }
+            }
+            
+            Deque<StoredPlayerBind> binds = db.getAll(StoredPlayerBind.class, f -> f.uuid = player.getUniqueId().toString());
+            while (!binds.isEmpty()) {
+                StoredPlayerBind data = binds.pollFirst();
+                
+                if (data.slot == null) continue;
+                
+                Manager.of(Abilities.class).getInfo(data.ability).ifPresent(ability -> {
+                    user.bindAbility(data.slot, ability);
                 });
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            }
+        });
 
         cache.put(player.getUniqueId(), user);
         Events.call(new UserCreationEvent(user));
@@ -162,33 +157,42 @@ public class Users extends Manager implements Listener {
             return;
         }
 
-        DBConnection db = Elemengine.database();
+        Database db = Elemengine.database();
 
         try {
-            if (db.exists(T_PLAYER_READ.replace("&1", user.getUniqueID().toString()))) {
-                // update eventually when t_pk_player has more columns?
-            } else {
-                db.send("INSERT INTO t_player VALUES ('" + user.getUniqueID() + "')");
+            if (!db.set(StoredPlayer.class, f -> f.uuid = user.getUniqueID().toString())) {
+                Elemengine.logger().info("Unable to save player info.");
             }
 
             for (Element element : Element.values()) {
                 if (!user.hasElement(element)) {
-                    db.send("DELETE FROM t_player_elements WHERE uuid = '" + user.getUniqueID() + "' AND element_name = '" + element.toString() + "'");
-                } else if (db.exists(T_PLAYER_ELEMENTS_READ_SPECIFIC.replace("&1", user.getUniqueID().toString()).replace("&2", element.toString()))) {
-                    db.send("UPDATE t_player_elements SET toggled = " + (user.isToggled(element) ? 1 : 0) + " WHERE uuid = '" + user.getUniqueID() + "' AND element_name = '" + element.toString() + "'");
+                    db.delete(StoredPlayerElement.class, f -> {
+                        f.uuid = user.getUniqueID().toString();
+                        f.element = element.toString();
+                    });
                 } else {
-                    db.send("INSERT INTO t_player_elements VALUES ('" + user.getUniqueID() + "', '" + element.toString() + "', " + (user.isToggled(element) ? 1 : 0) + ")");
+                    db.set(StoredPlayerElement.class, f -> {
+                        f.uuid = user.getUniqueID().toString();
+                        f.element = element.toString();
+                        f.toggled = user.isToggled(element);
+                    });
                 }
             }
 
             int slot = 0;
             for (AbilityInfo ability : user.getBinds()) {
+                int bind = slot;
                 if (ability == null) {
-                    db.send("DELETE FROM t_player_binds WHERE uuid = '" + user.getUniqueID() + "' AND bound_slot = " + slot);
-                } else if (db.exists(T_PLAYER_BINDS_READ_SPECIFIC.replace("&1", user.getUniqueID().toString()).replace("&2", "" + slot))) {
-                    db.send("UPDATE t_player_binds SET ability_name = '" + ability.getName() + "' WHERE uuid = '" + user.getUniqueID() + "' AND bound_slot = " + slot);
+                    db.delete(StoredPlayerBind.class, f -> {
+                        f.uuid = user.getUniqueID().toString();
+                        f.slot = bind;
+                    });
                 } else {
-                    db.send("INSERT INTO t_player_binds VALUES ('" + user.getUniqueID() + "', " + slot + ", '" + ability.getName() + "')");
+                    db.set(StoredPlayerBind.class, f -> {
+                        f.uuid = user.getUniqueID().toString();
+                        f.slot = bind;
+                        f.ability = ability.getName();
+                    });
                 }
 
                 ++slot;
@@ -270,5 +274,34 @@ public class Users extends Manager implements Listener {
 
             return null;
         }
+    }
+    
+    public static class StoredPlayer implements DataSchema {
+        
+        @DataKey
+        public String uuid;
+    }
+    
+    public static class StoredPlayerElement implements DataSchema {
+        
+        @DataKey
+        public String uuid;
+        
+        @DataKey
+        public String element;
+        
+        public Boolean toggled = null;
+        
+    }
+    
+    public static class StoredPlayerBind implements DataSchema {
+        
+        @DataKey
+        public String uuid;
+        
+        @DataKey
+        public Integer slot = null;
+        
+        public String ability;
     }
 }

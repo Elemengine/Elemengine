@@ -1,9 +1,9 @@
 package com.elemengine.elemengine.element.util;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.TextDisplay;
@@ -11,11 +11,13 @@ import org.bukkit.util.Transformation;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import com.elemengine.elemengine.Elemengine;
 import com.elemengine.elemengine.ability.AbilityUser;
 import com.elemengine.elemengine.temporary.Molecule;
 import com.elemengine.elemengine.temporary.Molecule.Fragment;
 import com.elemengine.elemengine.util.math.Gradient;
 import com.elemengine.elemengine.util.math.Maths;
+import com.elemengine.elemengine.util.math.SmoothNoise;
 import com.elemengine.elemengine.util.math.Vectors;
 import com.elemengine.elemengine.util.spigot.Colors;
 
@@ -79,25 +81,38 @@ public final class Firebending {
     
     public static final FlameColor RAINBOW_FIRE = new FlameColor() {
         
-        private final Gradient rainbow = Gradient.builder()
-                .add(Color.RED).add(Color.fromRGB(0xff8000))
-                .add(Color.YELLOW).add(Color.fromRGB(0x80ff00))
-                .add(Color.LIME).add(Color.fromRGB(0x00ff80))
-                .add(Color.AQUA).add(Color.fromRGB(0x0080ff))
-                .add(Color.BLUE).add(Color.fromRGB(0x8000ff))
-                .add(Color.FUCHSIA).add(Color.fromRGB(0xff0080))
-                .end(Color.RED);
+        private final Color[] rainbow = {
+            Color.fromRGB(0xbd0000), // red
+            Color.fromRGB(0xbd0000), // red
+            Color.fromRGB(0xbd0000), // red
+            Color.fromRGB(0xe15900), // orange
+            Color.fromRGB(0xfeff5b), // yellow
+            Color.fromRGB(0xfeff5b), // yellow
+            Color.fromRGB(0xfeff5b), // yellow
+            Color.fromRGB(0xfeff5b), // yellow
+            Color.fromRGB(0xb8e802), // lime
+            Color.fromRGB(0x00e900), // green
+            Color.fromRGB(0x00e900), // green
+            Color.fromRGB(0x00e900), // green
+            Color.fromRGB(0x8d2ed4), // purple
+            Color.fromRGB(0x8d2ed4), // purple
+            Color.fromRGB(0xb789d0), // light purple
+        };
         
-        private int calls = 0;
+        private SmoothNoise noise = new SmoothNoise(20);
+        private double y = 1.0;
         
         @Override
         public Gradient get() {
-            calls = (calls + 1) % 3600;
-            double value = ((double) calls) / 3600d;
+            y += ThreadLocalRandom.current().nextDouble(0, 0.03);
+            double angle = ((double) System.currentTimeMillis()) / 72000d;
+            
+            double value = noise.get(y * Math.cos(angle), y * Math.sin(angle));
+            int index = (int) Math.floor(((double) rainbow.length) * value);
             
             return Gradient.builder()
-                    .add(rainbow.getColor(value), 7)
-                    .add(Color.fromRGB(255, 136, 0))
+                    .add(rainbow[index], 7)
+                    .add(Color.fromARGB(127, 255, 64, 0))
                     .add(Color.BLACK.setAlpha(63))
                     .end(Color.BLACK.setAlpha(0));
         }
@@ -108,6 +123,7 @@ public final class Firebending {
     // FIRE --------------------------------------------------------------
     
     public static Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset, Vector3f drift, float scaling) {
+        user.getWorld().spawnParticle(Particle.FLAME, x, y, z, amount, offset, offset, offset, 0.0126, null);        
         Molecule molecule = new Molecule(user.getWorld(), x, y, z);
         
         for (int i = 0; i < amount; ++i) {

@@ -63,7 +63,5 @@ public final class Chat {
         return fromLegacy(combiner.apply(LEGACY.serialize(comp)));
     }
     
-    private static record FoundTag(int index, String tag, Component replace) {
-        
-    }
+    private static record FoundTag(int index, String tag, Component replace) {}
 }

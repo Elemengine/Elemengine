@@ -1,6 +1,5 @@
 package com.elemengine.elemengine.ability;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,7 +47,6 @@ public abstract class AbilityUser extends ElementHolder {
     private final PriorityQueue<Cooldown> cdQueue = new PriorityQueue<>(12, (a, b) -> (int) (a.getEndTime() - b.getEndTime()));
     private final List<ComboValidator> sequences = new LinkedList<>();
     private final Stamina stamina;
-    private BigInteger abilityFlags = BigInteger.ZERO;
 
     Set<AbilityInstance> active = new HashSet<>();
 
@@ -161,18 +159,6 @@ public abstract class AbilityUser extends ElementHolder {
 
     public final Stamina getStamina() {
         return stamina;
-    }
-    
-    public final boolean canAccessAbility(AbilityInfo info) {
-        return !this.abilityFlags.and(info.getBitFlag()).equals(BigInteger.ZERO);
-    }
-    
-    public final void giveAbilityAccess(AbilityInfo info) {
-        this.abilityFlags = this.abilityFlags.or(info.getBitFlag());
-    }
-    
-    public final void takeAbilityAccess(AbilityInfo info) {
-        this.abilityFlags = this.abilityFlags.and(info.getBitFlag().not());
     }
 
     /**

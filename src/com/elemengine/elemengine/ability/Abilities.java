@@ -2,7 +2,6 @@ package com.elemengine.elemengine.ability;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,7 +43,6 @@ import com.elemengine.elemengine.event.element.ElementChangeEvent;
 import com.elemengine.elemengine.event.user.UserInputTriggerEvent;
 import com.elemengine.elemengine.storage.configuration.Config;
 import com.elemengine.elemengine.user.Users;
-import com.elemengine.elemengine.util.data.Box;
 import com.elemengine.elemengine.util.reflect.Dynamics;
 import com.elemengine.elemengine.util.spigot.Events;
 import com.elemengine.elemengine.util.spigot.Threads;
@@ -140,17 +138,20 @@ public class Abilities extends Manager implements Listener {
             }
         }
         
+        /*
         if (!assignAbilityID(ability)) {
             Elemengine.database().send("INSERT INTO t_ability_ids (ability_name) VALUES ('" + ability.getName().toLowerCase() + "')").thenRun(() -> {
                 assignAbilityID(ability);
             }).join();
         }
+        */
         
         ability.onRegister();
         Events.register(ability);
         Elemengine.plugin().getLogger().info("Ability registered - " + ability.getName());
     }
     
+    /*
     private boolean assignAbilityID(AbilityInfo info) {
         final Box<Boolean> value = Box.of(false);
         
@@ -163,6 +164,7 @@ public class Abilities extends Manager implements Listener {
         
         return value.get();
     }
+    */
 
     public <T extends AbilityInfo> Optional<T> getInfo(Class<T> clazz) {
         if (clazz == null || cache.get(clazz) == null) return Optional.empty();
