@@ -43,11 +43,13 @@ public abstract class AbilityInstance {
     protected final AbilityUser user;
     protected final World world;
     
+    private final Map<Field, Object> base = new HashMap<>();
     private final Map<Field, Modifier> mods = new HashMap<>();
     
     private Phase state = Phase.STARTING;
     private int counter = -1;
     private long startTime = -1;
+    private boolean recalculating = false;
 
     public AbilityInstance(AbilityInfo provider, AbilityUser user) {
         this.provider = provider;
@@ -60,14 +62,15 @@ public abstract class AbilityInstance {
             if (!field.isAnnotationPresent(Attribute.class)) continue;
             
             Attribute attr = field.getAnnotation(Attribute.class);
-            if (!attr.auto()) continue;
-            
-            String autoField = attr.autoField();
-            if (autoField.isBlank()) {
-                autoField = field.getName();
+            if (attr.auto()) {
+                String autoField = attr.autoField();
+                if (autoField.isBlank()) {
+                    autoField = field.getName();
+                }
+                
+                Fields.get(provider, autoField).ifPresent(v -> Fields.set(this, field, v));
             }
-            
-            Fields.get(provider, autoField).ifPresent(v -> Fields.set(this, field, v));
+            Fields.get(this, field).ifPresent(value -> base.put(field, value));
         }
         
         startTime = System.currentTimeMillis();
@@ -129,14 +132,19 @@ public abstract class AbilityInstance {
     }
     
     public final void recalculateAttributes() {
-        Events.call(new AttributesRecalculateEvent(this));
+        if (recalculating) throw new RuntimeException("Attributes already recalculating exception.");
+        recalculating = true;
         
-        Iterator<Entry<Field, Modifier>> iter = mods.entrySet().iterator();
-        while (iter.hasNext()) {
-            Entry<Field, Modifier> entry = iter.next();
-            Fields.getSet(this, entry.getKey(), value -> entry.getValue().apply(value));
-            iter.remove();
+        if (!Events.call(new AttributesRecalculateEvent(this)).isCancelled()) {
+            Iterator<Entry<Field, Modifier>> iter = mods.entrySet().iterator();
+            while (iter.hasNext()) {
+                Entry<Field, Modifier> entry = iter.next();
+                Fields.set(this, entry.getKey(), entry.getValue().apply(base.get(entry.getKey())));
+                iter.remove();
+            }
         }
+        
+        recalculating = false;
     }
     
     public final boolean hasAttribute(String attribute) {

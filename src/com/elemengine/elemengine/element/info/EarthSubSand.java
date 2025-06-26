@@ -5,26 +5,26 @@ import org.bukkit.Material;
 import com.elemengine.elemengine.element.ElementInfo;
 import com.elemengine.elemengine.storage.configuration.Config;
 
-public class FireSubHeat implements ElementInfo {
+public class EarthSubSand implements ElementInfo {
 
     @Override
     public String getDisplayName() {
-        return "Heat";
+        return "Sand";
     }
 
     @Override
     public String getDescription() {
-        return "Heatbending ";
+        return "Bending the fine particles of sand allows for techniques that mimic airbending and waterbending, compacting or loosening as needed.";
     }
 
     @Override
     public String getChatColor() {
-        return "#ad3434";
+        return "#cbbd93";
     }
 
     @Override
     public Material getMaterial() {
-        return Material.RED_TERRACOTTA;
+        return Material.SAND;
     }
 
     @Override

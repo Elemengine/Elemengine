@@ -10,13 +10,12 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
 import com.elemengine.elemengine.element.info.AirElement;
-import com.elemengine.elemengine.element.info.AirSubSound;
 import com.elemengine.elemengine.element.info.EarthElement;
 import com.elemengine.elemengine.element.info.EarthSubLava;
 import com.elemengine.elemengine.element.info.EarthSubMetal;
+import com.elemengine.elemengine.element.info.EarthSubSand;
 import com.elemengine.elemengine.element.info.EnergyElement;
 import com.elemengine.elemengine.element.info.FireElement;
-import com.elemengine.elemengine.element.info.FireSubHeat;
 import com.elemengine.elemengine.element.info.FireSubLightning;
 import com.elemengine.elemengine.element.info.WaterElement;
 import com.elemengine.elemengine.element.info.WaterSubBlood;
@@ -42,13 +41,11 @@ public final class Element implements Configurable {
     public static final Element FIRE        = new Element(new FireElement());
     public static final Element WATER       = new Element(new WaterElement());
 
-    public static final Element SOUND       = new Element(new AirSubSound(), AIR);
-
     public static final Element METAL       = new Element(new EarthSubMetal(), EARTH);
     public static final Element LAVA        = new Element(new EarthSubLava(), EARTH);
+    public static final Element SAND        = new Element(new EarthSubSand(), EARTH);
 
     public static final Element LIGHTNING   = new Element(new FireSubLightning(), FIRE);
-    public static final Element HEAT        = new Element(new FireSubHeat(), FIRE);
 
     public static final Element BLOOD       = new Element(new WaterSubBlood(), WATER);
     public static final Element PLANT       = new Element(new WaterSubPlant(), WATER);
