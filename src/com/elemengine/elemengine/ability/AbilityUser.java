@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import org.bukkit.FluidCollisionMode;
@@ -119,6 +120,10 @@ public abstract class AbilityUser extends ElementHolder {
         }
 
         return found;
+    }
+    
+    public <T extends AbilityInstance> void forInstance(Class<T> clazz, Consumer<T> func) {
+        this.getInstance(clazz).ifPresent(func);
     }
 
     public Set<AbilityInstance> getActive() {

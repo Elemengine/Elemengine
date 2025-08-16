@@ -81,7 +81,40 @@ public class Sourcing implements Listener {
         }
     }
     
+    /**
+     * Request a source for the given element(s) within the specified range. This calls the
+     * {@link UserRequestSourceEvent} and returns {@link UserRequestSourceEvent#getSourceSupplier()}.
+     * This can be picked up by any addons to modify how sourcing works, while Elemengine has
+     * a built in backup for any sourcing that doesn't already have a source supplier. The default
+     * sourcing only checks the player's look direction with the range for a targeted source block,
+     * doing nothing else with the supplied source.
+     * @param user The {@link AbilityUser} to request a source for
+     * @param range How far to allow the sourcing
+     * @param first The main element to source for
+     * @param others Any additional elements to search for
+     * @return A {@link Supplier} of {@link Location} for the found source, or null if one wasn't found.
+     */
     public static Supplier<Location> request(AbilityUser user, double range, Element first, Element...others) {
         return Events.call(new UserRequestSourceEvent(user, range, first, others)).getSourceSupplier();
+    }
+    
+    /**
+     * Request a source for the given element(s) within the specified range. This is a wrapper call
+     * for {@link Sourcing#request(AbilityUser, double, Element, Element...)} that returns the supplied
+     * Location, or null if the source supplier was null.
+     * This can be picked up by any addons to modify how sourcing works, while Elemengine has
+     * a built in backup for any sourcing that doesn't already have a source supplier. The default
+     * sourcing only checks the player's look direction with the range for a targeted source block,
+     * doing nothing else with the supplied source.
+     * @param user The {@link AbilityUser} to request a source for
+     * @param range How far to allow the sourcing
+     * @param first The main element to source for
+     * @param others Any additional elements to search for
+     * @return A {@link Location} for the found source, or null if one wasn't found.
+     */
+    public static Location requestLocation(AbilityUser user, double range, Element first, Element...others) {
+        Supplier<Location> supp = request(user, range, first, others);
+        if (supp == null) return null;
+        return supp.get();
     }
 }

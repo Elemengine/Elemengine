@@ -24,8 +24,6 @@ import org.joml.Vector3f;
 
 import com.elemengine.elemengine.util.spigot.Displays;
 
-import io.papermc.paper.entity.TeleportFlag;
-
 public final class Molecule {
     
     private static final Set<Molecule> ACTIVE = new HashSet<>();
@@ -148,6 +146,14 @@ public final class Molecule {
                 frag.entity.teleport(frag.entity.getLocation().add(dx, dy, dz), TeleportCause.PLUGIN);
             }
         }
+    }
+    
+    public void moveTo(Location loc) {
+        this.move(loc.getX() - this.loc.getX(), loc.getY() - this.loc.getY(), loc.getZ() - this.loc.getZ());
+    }
+    
+    public void moveTo(double x, double y, double z) {
+        this.move(x - loc.getX(), y - loc.getY(), z - loc.getZ());
     }
     
     public void destroy() {

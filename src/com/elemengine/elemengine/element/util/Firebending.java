@@ -123,7 +123,7 @@ public final class Firebending {
     // FIRE --------------------------------------------------------------
     
     public static Molecule spawnFlames(AbilityUser user, int amount, double x, double y, double z, float offset, Vector3f drift, float scaling) {
-        user.getWorld().spawnParticle(Particle.FLAME, x, y, z, amount, offset, offset, offset, 0.0126, null);        
+        //user.getWorld().spawnParticle(Particle.FLAME, x, y, z, amount, offset, offset, offset, 0.0126, null);        
         Molecule molecule = new Molecule(user.getWorld(), x, y, z);
         
         for (int i = 0; i < amount; ++i) {

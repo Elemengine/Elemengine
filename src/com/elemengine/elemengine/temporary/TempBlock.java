@@ -88,12 +88,18 @@ public class TempBlock {
         if (stack.peek() == data) {
             stack.poll();
             
+            if (this.inQueue) {
+                QUEUE.remove(this);
+                this.inQueue = false;
+            }
+            
             TempData td;
             while ((td = stack.peek()) != null) {
                 if (!td.isDone()) {
                     this.block.setBlockData(td.data, false);
                     if (!this.inQueue && td.duration > 0) {
                         QUEUE.add(this);
+                        this.inQueue = true;
                     }
                     break;
                 }
@@ -128,11 +134,12 @@ public class TempBlock {
             return;
         }
         
-        original.update();
+        original.update(true);
     }
 
     public void destroy() {
         CACHE.remove(this.block);
+        QUEUE.remove(this);
         for (TempData td : this.stack) {
             td.onDestroy.accept(this);
         }
@@ -158,7 +165,7 @@ public class TempBlock {
         return CACHE.containsKey(block);
     }
 
-    public static TempBlock of(Block block) {
+    public static synchronized TempBlock of(Block block) {
         Preconditions.checkArgument(block != null);
         return CACHE.computeIfAbsent(block, TempBlock::new);
     }
